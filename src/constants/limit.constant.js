@@ -1,0 +1,7 @@
+module.exports = Object.freeze({
+    MESSAGE_LIMIT_SEARCH : 10,
+    RECORD_DISPLAY_LIMIT: 20,
+    DISPLAY_RECORDS : 10,
+    CHAT_LIST_RECORDS : 10,
+    RESPONSR_MAX_RECORDS : 100 
+});

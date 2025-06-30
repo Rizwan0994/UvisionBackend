@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Cron Information</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  </head>
+  <style>
+  </style>
+  <body>
+    <p>Welcome to <%= status %></p>
+    <table class="table table-hover">
+      <thead>
+          <tr>
+              <th scope="col">id</th>
+              <th scope="col">job</th>  
+              <th scope="col">lastSync</th>  
+              <th scope="col">log</th>
+              <th scope="col">isRunning</th>
+              <th scope="col">onDate</th>
+              <th scope="col">CreatedAt</th>
+              <th scope="col">UpdatedAt</th>
+          </tr>
+      </thead>
+      <tbody>
+          <% for (let j = 0; j < data.length; j++) { %>
+              <tr>
+                  <td class="fee-name"><%= data[j].id %></td>
+                  <td><%= data[j].job %></td>
+                  <td class="fee-value"><%= data[j].lastSync %></td>
+                  <td><%= data[j].log %></td>
+                  <td class="fee-fixed"><%= data[j].isRunning %></td>
+                  <td class="fee-fixed"><%= data[j].onDate %></td>
+                  <td><%= data[j].createdAt %></td>
+                  <td><%= data[j].updatedAt %></td>
+              </tr>
+          <% } %>
+      </tbody>
+  </table>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+  </body>
+</html>

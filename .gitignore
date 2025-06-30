@@ -1,0 +1,9 @@
+ # dependencies
+/node_modules
+/SSL_cert
+package-lock.json
+.env
+.sequelizerc
+/src/firebaseConfig/*
+*.zip
+*.rar
