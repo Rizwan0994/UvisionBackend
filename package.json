@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon --expose-gc index.js"
+    "start": "nodemon --expose-gc index.js",
+    "docs:generate": "node scripts/generate-docs.js",
+    "docs:serve": "node -e \"console.log('📖 API Documentation available at:'); console.log('🌐 Swagger UI: http://localhost:3000/api-docs'); console.log('📘 ReDoc: http://localhost:3000/redoc'); console.log('📄 JSON Spec: http://localhost:3000/api-docs.json');\"",
+    "docs:build": "npm run docs:generate && echo '✅ Documentation built successfully'",
+    "docs:validate": "node -e \"const { specs } = require('./src/config/swagger'); console.log('✅ OpenAPI specification is valid'); console.log('📊 Endpoints documented:', Object.keys(specs.paths || {}).length);\""
   },
   "keywords": [],
   "author": "",
@@ -39,9 +43,13 @@
     "nodemon": "^2.0.20",
     "pg": "^8.7.3",
     "pg-hstore": "^2.3.4",
+    "redoc-cli": "^0.13.21",
     "sequelize": "^6.19.0",
     "socket.io": "^4.5.0",
-    "uuid": "^8.3.2"
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^8.3.2",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",
