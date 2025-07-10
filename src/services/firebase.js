@@ -1,7 +1,7 @@
 const admin = require("firebase-admin");
 
 admin.initializeApp({
-    credential: admin.credential.cert(require("../firebaseConfig/uvision-fcm-firebase-adminsdk.json"))
+    // credential: admin.credential.cert(require("../firebaseConfig/uvision-fcm-firebase-adminsdk.json"))
 });
 
 exports.SendFirebaseNotification = async (data) => {
