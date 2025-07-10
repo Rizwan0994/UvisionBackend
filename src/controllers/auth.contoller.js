@@ -14,23 +14,39 @@ const { removeFCMToken } = require("./FCMToken.controller");
 const { generateMasterPassword } = require("../helpers/common");
 const {
     user: UserModel,
+    roles: RoleModel,
     userLogs: UserLogs,
     Op
 } = require("../models/index");
 const createError = require('http-errors');
 
-exports.signUp = async (email, name, profilePicture, password) => {
+exports.signUp = async (data) => {
     try {
+        const { fullName, userName, email, password,role } = data;
         const encyptedPassword = await encryptPassword(password)
         const obj = {
             email: email,
+            userName: userName,
             password: encyptedPassword,
-            name: name,
-            profilePicture: profilePicture || undefined,
+            fullName: fullName,
         }
         if (await UserModel.findOne({ where: { email: email } })) {
             return { status: 0, message: "Email already exists" };
         }
+        //check if username already exists
+        if(await UserModel.findOne({ where: { userName: userName } })) {
+           return { status: 0, message: "Username already exists" };
+}        
+//set role get from role table then find id then set that id to user as relation in role field
+        if(role){
+            const findRole = await RoleModel.findOne({ where: { name: role } });
+            if(!findRole) {
+                return { status: 0, message: "Role not found" };
+            }
+            obj.role = findRole.id;
+        }
+
+
         await UserModel.create({ ...obj, slug: uuidv4() });
         return { message: "User added successfully." };
     } catch (error) {
@@ -46,7 +62,7 @@ exports.login = async (data) => {
             throw new createError["BadRequest"]("All input is required");
             return;
         }
-        const findUser = await UserModel.scope(['roleData','designations']).findOne({
+        const findUser = await UserModel.scope(['roleData']).findOne({
             where: { email: { [Op.iLike]: "%" + data.email + "%" }, isDeleted: false },
         });
 
@@ -66,7 +82,7 @@ exports.login = async (data) => {
 
         });
         const token = await generateToken({ id: findUser.dataValues.id });
-        let user = { ...result[1].dataValues, roleData: findUser.dataValues.roleData, userDesignations: findUser.dataValues.userDesignations }
+        let user = { ...result[1].dataValues, roleData: findUser.dataValues.roleData }
         delete user.password
         return { token, user, message: "Logged in successfully." };
     } catch (error) {
@@ -84,7 +100,7 @@ exports.verfiyToken = async (token) => {
                 where: { id: data.id },
                 returning: true
             });
-        const findUser = await UserModel.scope(['defaultScope','roleData','designations']).findOne({
+        const findUser = await UserModel.scope(['defaultScope','roleData',]).findOne({
             where: { id: data.id, isDeleted: false, isActive: true}
         });
         if(!findUser.dataValues.ghostUser){

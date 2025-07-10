@@ -1,10 +1,13 @@
 'use strict';
 const cron = require('node-cron');
 const cronClass = require("../services/cron")
+const seedRoles = require('../seeders/roles.seeder');
 
 let socketObj = null;
 exports.socketInstance = (io) => {
     if(io) socketObj = io;
+    // Run roles seeder when socket is initialized (server start)
+    seedRoles().catch(error => console.error('Failed to seed roles:', error));
 }
 
 

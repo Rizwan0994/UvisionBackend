@@ -6,7 +6,7 @@ const catchAsync = require("../util/catchAsync").catchAsync;
 const addUserLog = require("../controllers/userLogs.controller").addUserLog;
 
 router.post('/signup', catchAsync(async function _signUp(req, res){
-    let data = await signUp(req.body.email, req.body.name, req.body.profilePicture, req.body.password);
+    let data = await signUp(req.body);
     return res.success({data});
 }))
 .post('/login', catchAsync(async function _login(req, res){
