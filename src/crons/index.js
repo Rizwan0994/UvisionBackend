@@ -2,12 +2,15 @@
 const cron = require('node-cron');
 const cronClass = require("../services/cron")
 const seedRoles = require('../seeders/roles.seeder');
+const seedCategories = require('../seeders/categories.seeder');
 
 let socketObj = null;
 exports.socketInstance = (io) => {
     if(io) socketObj = io;
     // Run roles seeder when socket is initialized (server start)
     seedRoles().catch(error => console.error('Failed to seed roles:', error));
+    // Run categories seeder when socket is initialized (server start)
+    seedCategories().catch(error => console.error('Failed to seed categories:', error));
 }
 
 
@@ -61,3 +64,59 @@ exports.socketInstance = (io) => {
 //         console.log('error :>> ', error);
 //     }
 // });
+
+// Professional Metrics Cron Jobs
+
+// Update all professional metrics every 6 hours
+cron.schedule('0 */6 * * *', async () => { 
+    try {
+        const cronJob = new cronClass("PROFESSIONAL_METRICS_UPDATE")
+        const job = await cronJob.get();    
+        if(job.isRunning){
+            console.log({ status: 1, message: `PROFESSIONAL_METRICS_UPDATE already running`});
+            return;
+        } 
+        await cronJob.start();
+        await require('./professionalMetrics.cron').updateAllProfessionalMetrics();
+        await cronJob.stop();
+
+    } catch (error) {
+        console.log('Professional metrics cron error :>> ', error);
+    }
+});
+
+// Update response time metrics every hour
+cron.schedule('0 * * * *', async () => { 
+    try {
+        const cronJob = new cronClass("RESPONSE_TIME_UPDATE")
+        const job = await cronJob.get();    
+        if(job.isRunning){
+            console.log({ status: 1, message: `RESPONSE_TIME_UPDATE already running`});
+            return;
+        } 
+        await cronJob.start();
+        await require('./professionalMetrics.cron').updateActiveResponseTimes();
+        await cronJob.stop();
+
+    } catch (error) {
+        console.log('Response time metrics cron error :>> ', error);
+    }
+});
+
+// Update completion rates daily at 2 AM
+cron.schedule('0 2 * * *', async () => { 
+    try {
+        const cronJob = new cronClass("COMPLETION_RATE_UPDATE")
+        const job = await cronJob.get();    
+        if(job.isRunning){
+            console.log({ status: 1, message: `COMPLETION_RATE_UPDATE already running`});
+            return;
+        } 
+        await cronJob.start();
+        await require('./professionalMetrics.cron').updateProfessionalCompletionRates();
+        await cronJob.stop();
+
+    } catch (error) {
+        console.log('Completion rate metrics cron error :>> ', error);
+    }
+});

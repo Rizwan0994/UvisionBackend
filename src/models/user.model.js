@@ -13,7 +13,29 @@ module.exports = (sequelize) => {
          * The `models/index` file will call this method automatically.
          */
         static associate(models) {
-            // define association here
+            // User has one professional profile
+            // Users.hasOne(models.professionalProfile, {
+            //     foreignKey: 'userId',
+            //     as: 'professionalProfile'
+            // });
+
+            // // User has many professional reviews (as client)
+            // Users.hasMany(models.professionalReviews, {
+            //     foreignKey: 'clientId',
+            //     as: 'reviewsGiven'
+            // });
+
+            // // User has many professional bookings (as client)
+            // Users.hasMany(models.professionalBookings, {
+            //     foreignKey: 'clientId',
+            //     as: 'bookings'
+            // });
+
+            // // User belongs to role
+            // Users.belongsTo(models.roles, {
+            //     foreignKey: 'role',
+            //     as: 'userRole'
+            // });
         }
     }
     Users.init({

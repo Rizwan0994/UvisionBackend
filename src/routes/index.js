@@ -24,6 +24,9 @@ router.use("/health-check", (req, res) => {
 // Authentication routes
 router.use('/auth', require("./auth.routes"));
 
+// Categories routes (public)
+router.use('/categories', require("./categories.routes"));
+
 // Cron routes
 router.use('/cron', require("./cron.routes"));
 
@@ -44,4 +47,6 @@ router.use('/organization', require("./organization.routes"));
 router.use('/messageEmoji', require("./messageEmoji.routes"));
 router.use('/companyRole', require("./companyRole.routes"));
 router.use('/designationGroup', require("./designationGroup.routes"));
+router.use('/professional', require("./professional.routes"));
+router.use('/booking', require("./booking.routes"));
 module.exports = router;

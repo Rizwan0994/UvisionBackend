@@ -1,0 +1,1375 @@
+{
+  "info": {
+    "_postman_id": "uvision-complete-api-collection",
+    "name": "UVision Complete API Collection",
+    "description": "Complete API collection for UVision Backend system including Auth, Professional Profile, Services, Booking, and Management APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "description": "User authentication endpoints",
+      "item": [
+        {
+          "name": "Sign Up",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Doe\",\n  \"userName\": \"johndoe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"yourpassword123\",\n  \"role\": \"client\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signup"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sign Up Professional",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Thomas Laurent\",\n  \"userName\": \"thomaslaurent\",\n  \"email\": \"thomas@example.com\",\n  \"password\": \"yourpassword123\",\n  \"role\": \"professional\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signup"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Client",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.token) {",
+                  "        pm.globals.set('clientToken', response.token);",
+                  "        pm.globals.set('clientId', response.user.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"yourpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Professional",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.token) {",
+                  "        pm.globals.set('professionalToken', response.token);",
+                  "        pm.globals.set('professionalId', response.user.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"thomas@example.com\",\n  \"password\": \"yourpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Token",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verifyToken",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verifyToken"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"yourpassword123\",\n  \"newPassword\": \"newpassword123\",\n  \"confirmPassword\": \"newpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/changePassword",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "changePassword"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Professional Profile Management",
+      "description": "Professional profile creation and management",
+      "item": [
+        {
+          "name": "Create/Update Professional Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.profile) {",
+                  "        pm.globals.set('professionalProfileId', response.data.profile.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Professional Photographer\",\n  \"specialization\": \"Event Photography\",\n  \"bio\": \"Passionate event photographer with 7+ years of experience. Specializing in capturing authentic moments at corporate events, weddings, and ceremonies.\",\n  \"experienceYears\": 7,\n  \"location\": \"Paris, France\",\n  \"languages\": [\"French\", \"English\"],\n  \"hourlyRate\": 250.00,\n  \"currency\": \"EUR\",\n  \"coverImage\": \"https://example.com/cover-image.jpg\",\n  \"categories\": [\n    {\n      \"id\": 1,\n      \"isPrimary\": true\n    },\n    {\n      \"id\": 101,\n      \"isPrimary\": false\n    }\n  ],\n  \"note\": \"responseTime and level are automatically calculated by the system, categories can be linked to professional\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Professional Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/profile/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "profile", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Public Professional Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/professional/profile/{{professionalId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "profile", "{{professionalId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Professionals",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"photographer\",\n  \"location\": \"Paris\",\n  \"minRating\": 4.0,\n  \"maxRate\": 300,\n  \"categoryIds\": [1, 2],\n  \"page\": 1,\n  \"limit\": 10,\n  \"sortBy\": \"rating\",\n  \"sortOrder\": \"DESC\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "search"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Availability Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isAvailable\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "availability"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Recalculate My Metrics",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/metrics/recalculate",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "metrics", "recalculate"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Professional Services Management",
+      "description": "Professional services creation and management",
+      "item": [
+        {
+          "name": "Create Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.service) {",
+                  "        pm.globals.set('serviceId', response.data.service.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceName\": \"Event Photography - Standard (4h)\",\n  \"serviceType\": \"Photography\",\n  \"description\": \"Professional event photography service for corporate events, weddings, and special occasions. Includes 4 hours of coverage with high-quality equipment.\",\n  \"price\": 250.00,\n  \"currency\": \"EUR\",\n  \"duration\": \"4 hours\",\n  \"requirements\": \"Venue access required 30 minutes before event start\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "services"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Additional Service",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceName\": \"Event Photography - Premium (8h)\",\n  \"serviceType\": \"Photography\",\n  \"description\": \"Extended event photography service with 8 hours of coverage, including pre-event setup and post-event coverage.\",\n  \"price\": 450.00,\n  \"currency\": \"EUR\",\n  \"duration\": \"8 hours\",\n  \"requirements\": \"Full venue access and detailed event schedule required\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "services"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Services",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/services/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "services", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Service",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceName\": \"Event Photography - Standard (4h) - Updated\",\n  \"serviceType\": \"Photography\",\n  \"description\": \"Updated description for professional event photography service\",\n  \"price\": 280.00,\n  \"currency\": \"EUR\",\n  \"duration\": \"4 hours\",\n  \"requirements\": \"Updated requirements\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/services/{{serviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "services", "{{serviceId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Service",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/services/{{serviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "services", "{{serviceId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Portfolio Management",
+      "description": "Professional portfolio management endpoints",
+      "item": [
+        {
+          "name": "Add Portfolio Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Wedding Photography - Sarah & Michael\",\n  \"description\": \"Beautiful outdoor wedding ceremony and reception photography\",\n  \"mediaType\": \"image\",\n  \"mediaUrl\": \"https://example.com/portfolio/wedding-1.jpg\",\n  \"thumbnailUrl\": \"https://example.com/portfolio/wedding-1-thumb.jpg\",\n  \"category\": \"Wedding Photography\",\n  \"tags\": [\"wedding\", \"outdoor\", \"ceremony\", \"reception\"],\n  \"projectDate\": \"2024-06-15\",\n  \"clientName\": \"Sarah & Michael\",\n  \"projectType\": \"wedding\",\n  \"location\": \"Paris, France\",\n  \"equipment\": [\"Canon 5D Mark IV\", \"24-70mm f/2.8\", \"85mm f/1.4\"],\n  \"isFeatured\": true,\n  \"displayOrder\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/portfolio",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "portfolio"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Portfolio",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/portfolio/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "portfolio", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Portfolio by Professional ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/professional/portfolio/{{professionalId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "portfolio", "{{professionalId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Portfolio Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Wedding Photography - Sarah & Michael (Updated)\",\n  \"description\": \"Updated: Beautiful outdoor wedding ceremony and reception photography\",\n  \"isFeatured\": false,\n  \"displayOrder\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/portfolio/{{portfolioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "portfolio", "{{portfolioId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Portfolio Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/portfolio/{{portfolioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "portfolio", "{{portfolioId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Portfolio Display Order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"portfolioItems\": [\n    { \"id\": 1, \"displayOrder\": 1 },\n    { \"id\": 2, \"displayOrder\": 2 },\n    { \"id\": 3, \"displayOrder\": 3 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/portfolio/order",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "portfolio", "order"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Portfolio Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/professional/portfolio/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "portfolio", "categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Increment Portfolio View Count",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/professional/portfolio/{{portfolioId}}/view",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "portfolio", "{{portfolioId}}", "view"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Categories Management",
+      "description": "Category management system for professional services",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Main Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/main",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "main"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Subcategories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/1/subcategories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "1",
+                "subcategories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Categories",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"photo\",\n  \"parentId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categories/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Client Booking Flow",
+      "description": "Complete booking flow for clients (4 steps)",
+      "item": [
+        {
+          "name": "Create Booking (Step 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.booking) {",
+                  "        pm.globals.set('bookingId', response.data.booking.id);",
+                  "        pm.globals.set('bookingNumber', response.data.booking.bookingNumber);",
+                  "        pm.globals.set('confirmationCode', response.data.booking.confirmationCode);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"professionalId\": {{professionalId}},\n  \"serviceId\": {{serviceId}},\n  \"eventDate\": \"2024-08-15\",\n  \"eventTime\": \"14:00\",\n  \"duration\": 4,\n  \"eventType\": \"wedding\",\n  \"location\": \"Paris, France\",\n  \"guestCount\": 100,\n  \"specialRequests\": \"Please focus on candid moments during the ceremony\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking Details (Step 2)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventDate\": \"2024-08-15\",\n  \"eventTime\": \"14:30\",\n  \"duration\": 5,\n  \"location\": \"Updated venue: Grand Hotel Paris\",\n  \"guestCount\": 120,\n  \"specialRequests\": \"Updated: Please focus on candid moments and family portraits\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}/details",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "{{bookingId}}", "details"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Process Payment (Step 3)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethod\": \"credit_card\",\n  \"paymentDetails\": {\n    \"cardNumber\": \"4111111111111111\",\n    \"expiryMonth\": \"12\",\n    \"expiryYear\": \"2025\",\n    \"cvv\": \"123\"\n  },\n  \"amount\": 1250.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}/payment",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "{{bookingId}}", "payment"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Booking (Step 4)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirmationCode\": \"CONF123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "{{bookingId}}", "confirm"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Bookings (Client)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Booking Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "{{bookingId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Change of plans due to venue unavailability\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "{{bookingId}}", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/booking/availability/{{professionalId}}/2024-08-15",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "availability", "{{professionalId}}", "2024-08-15"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Professional Booking Management",
+      "description": "Professional side booking management",
+      "item": [
+        {
+          "name": "Get Professional Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Booking Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Upcoming Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/upcoming",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "upcoming"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Professional Booking Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/{{bookingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "{{bookingId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/{{bookingId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "{{bookingId}}", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking Status to In Progress",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/{{bookingId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "{{bookingId}}", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking Status to Completed",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/{{bookingId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "{{bookingId}}", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Recalculate Metrics",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/metrics/recalculate",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "metrics", "recalculate"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. System Utilities",
+      "description": "Complete booking flow for clients (4 steps)",
+      "item": [
+        {
+          "name": "Step 1 - Create Booking (Service Selection)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.booking) {",
+                  "        pm.globals.set('bookingId', response.data.booking.id);",
+                  "        pm.globals.set('bookingNumber', response.data.booking.bookingNumber);",
+                  "        pm.globals.set('confirmationCode', response.data.booking.confirmationCode);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"professionalId\": {{professionalProfileId}},\n  \"serviceId\": {{serviceId}},\n  \"eventDate\": \"2025-04-30T10:00:00Z\",\n  \"duration\": \"4 hours\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - Update Booking Details (Event Details)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": \"Conference Center Paris, 123 Rue de la Paix, 75001 Paris, France\",\n  \"startTime\": \"10:00\",\n  \"duration\": \"4 hours\",\n  \"eventType\": \"corporate\",\n  \"guestCount\": 150,\n  \"specialRequirements\": \"Please bring professional lighting equipment. Event includes VIP section that needs special attention. Please coordinate with event manager upon arrival.\",\n  \"additionalServices\": [\n    {\n      \"name\": \"Express Delivery (24h)\",\n      \"description\": \"Get your photos within 24 hours\",\n      \"price\": 50\n    },\n    {\n      \"name\": \"Extended Coverage\",\n      \"description\": \"Additional 1 hour of coverage\",\n      \"price\": 60\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}/details",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "{{bookingId}}", "details"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3 - Process Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethod\": \"credit_card\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardholderName\": \"John Smith\",\n  \"expiryDate\": \"12/26\",\n  \"cvv\": \"123\",\n  \"paymentType\": \"full\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}/payment",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "{{bookingId}}", "payment"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 4 - Confirm Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirmationCode\": \"{{confirmationCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "{{bookingId}}", "confirm"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Client Booking Management",
+      "description": "Client booking management endpoints",
+      "item": [
+        {
+          "name": "Get My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Booking Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "{{bookingId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Change of event date due to venue availability\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "{{bookingId}}", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/booking/availability/{{professionalProfileId}}/2025-04-30",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking", "availability", "{{professionalProfileId}}", "2025-04-30"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Professional Booking Management",
+      "description": "Professional booking management and dashboard",
+      "item": [
+        {
+          "name": "Get All Professional Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Booking Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Upcoming Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/upcoming",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "upcoming"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Booking Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/{{bookingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "{{bookingId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking Status to Confirmed",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/{{bookingId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "{{bookingId}}", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking Status to In Progress",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/{{bookingId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "{{bookingId}}", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking Status to Completed",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-access-token", "value": "{{professionalToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/bookings/{{bookingId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "bookings", "{{bookingId}}", "status"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. System Utilities",
+      "description": "System health check and utilities",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health-check",
+              "host": ["{{baseUrl}}"],
+              "path": ["health-check"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Database Query",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"SELECT * FROM users LIMIT 5\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/query",
+              "host": ["{{baseUrl}}"],
+              "path": ["query"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set base URL if not set",
+          "if (!pm.variables.get('baseUrl')) {",
+          "    pm.variables.set('baseUrl', 'http://localhost:8000');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test to check response format",
+          "pm.test('Response should be JSON', function () {",
+          "    pm.response.to.be.json;",
+          "});",
+          "",
+          "pm.test('Response should have correct structure', function () {",
+          "    if (pm.response.code === 200) {",
+          "        const response = pm.response.json();",
+          "        pm.expect(response).to.have.property('message');",
+          "    }",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "clientToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for client user"
+    },
+    {
+      "key": "professionalToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for professional user"
+    },
+    {
+      "key": "clientId",
+      "value": "",
+      "type": "string",
+      "description": "Client user ID"
+    },
+    {
+      "key": "professionalId",
+      "value": "",
+      "type": "string",
+      "description": "Professional user ID"
+    },
+    {
+      "key": "professionalProfileId",
+      "value": "",
+      "type": "string",
+      "description": "Professional profile ID"
+    },
+    {
+      "key": "serviceId",
+      "value": "",
+      "type": "string",
+      "description": "Service ID"
+    },
+    {
+      "key": "bookingId",
+      "value": "",
+      "type": "string",
+      "description": "Booking ID"
+    },
+    {
+      "key": "bookingNumber",
+      "value": "",
+      "type": "string",
+      "description": "Booking reference number"
+    },
+    {
+      "key": "confirmationCode",
+      "value": "",
+      "type": "string",
+      "description": "Booking confirmation code"
+    }
+  ]
+}

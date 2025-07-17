@@ -12,6 +12,7 @@ exports.userModel = (db) => {
     db.user.hasMany(db.note, { foreignKey: "createdBy" });
     db.user.hasMany(db.note, { foreignKey: "lastUpdatedBy" });
     db.user.hasMany(db.messageEmoji, { foreignKey: "userId"});
+    db.user.hasOne(db.professionalProfile, { foreignKey: "userId", as: 'professionalProfile'});
     db.user.belongsTo(db.roles, {foreignKey: "role", sourceKey: 'id', as: 'roleData'});
     db.user.belongsTo(db.companyRole, {foreignKey: "companyRoleId", sourceKey: 'id', as: 'companyRoleData'});
 
@@ -48,6 +49,14 @@ exports.userModel = (db) => {
     db.user.addScope("FCMTokens", {
         include:{
             model: db.FCMToken,
+            required: false,
+        }
+    })
+
+    db.user.addScope("professionalProfile", {
+        include:{
+            model: db.professionalProfile,
+            as: 'professionalProfile',
             required: false,
         }
     })
@@ -391,3 +400,286 @@ exports.designationGroupModel = (db) => {
     db.designationGroup.belongsTo(db.designations, { foreignKey: "designationId", sourceKey: "id", as: "designationGroupInfo", onDelete: "CASCADE"});
     db.designationGroup.belongsTo(db.chat, { foreignKey: "chatId", sourceKey: "id", as: "designationChatInfo", onDelete: "CASCADE"});
 }
+
+// Professional Profile Associations
+exports.professionalProfileModel = (db) => {
+    // Professional profile belongs to user
+    db.professionalProfile.belongsTo(db.user, {
+        foreignKey: 'userId',
+        as: 'user'
+    });
+
+    // Professional profile has many services
+    db.professionalProfile.hasMany(db.professionalServices, {
+        foreignKey: 'professionalId',
+        as: 'services'
+    });
+
+    // Professional profile has many portfolio items
+    db.professionalProfile.hasMany(db.professionalPortfolio, {
+        foreignKey: 'professionalId',
+        as: 'portfolio'
+    });
+
+    // Professional profile has many reviews
+    db.professionalProfile.hasMany(db.professionalReviews, {
+        foreignKey: 'professionalId',
+        as: 'reviews'
+    });
+
+    // Professional profile has many bookings
+    db.professionalProfile.hasMany(db.professionalBookings, {
+        foreignKey: 'professionalId',
+        as: 'bookings'
+    });
+
+    // Professional profile has many availability slots
+    db.professionalProfile.hasMany(db.professionalAvailability, {
+        foreignKey: 'professionalId',
+        as: 'availability'
+    });
+
+    // Professional profile has many equipment
+    db.professionalProfile.hasMany(db.professionalEquipment, {
+        foreignKey: 'professionalId',
+        as: 'equipment'
+    });
+
+    // Many-to-many relationship with categories through junction table
+    db.professionalProfile.belongsToMany(db.category, {
+        through: db.professionalCategory,
+        foreignKey: 'professionalId',
+        otherKey: 'categoryId',
+        as: 'categories'
+    });
+
+    // Junction table association
+    db.professionalProfile.hasMany(db.professionalCategory, { 
+        foreignKey: 'professionalId',
+        as: 'professionalCategories'
+    });
+
+    // Scopes for professional profile
+    db.professionalProfile.addScope('user', {
+        include: {
+            model: db.user,
+            attributes: ['id', 'fullName', 'email', 'profilePicture'],
+            as: 'user',
+            required: true
+        }
+    });
+
+    db.professionalProfile.addScope('services', {
+        include: {
+            model: db.professionalServices,
+            attributes: ['id', 'serviceName', 'price', 'currency', 'isActive'],
+            as: 'services',
+            required: false
+        }
+    });
+
+    db.professionalProfile.addScope('portfolio', {
+        include: {
+            model: db.professionalPortfolio,
+            attributes: ['id', 'title', 'mediaUrl', 'mediaType', 'isVisible'],
+            as: 'portfolio',
+            where: { isVisible: true },
+            required: false
+        }
+    });
+
+    db.professionalProfile.addScope('reviews', {
+        include: {
+            model: db.professionalReviews,
+            attributes: ['id', 'rating', 'comment', 'createdAt'],
+            as: 'reviews',
+            include: {
+                model: db.user,
+                attributes: ['id', 'fullName', 'profilePicture'],
+                as: 'client'
+            },
+            required: false
+        }
+    });
+
+    db.professionalProfile.addScope('categories', {
+        include: {
+            model: db.category,
+            attributes: ['id', 'name', 'slug', 'icon', 'color'],
+            as: 'categories',
+            through: { attributes: ['isPrimary'] },
+            required: false
+        }
+    });
+};
+
+exports.professionalServicesModel = (db) => {
+    // Service belongs to professional profile
+    db.professionalServices.belongsTo(db.professionalProfile, {
+        foreignKey: 'professionalId',
+        as: 'professional'
+    });
+
+    // Service has many bookings
+    db.professionalServices.hasMany(db.professionalBookings, {
+        foreignKey: 'serviceId',
+        as: 'bookings'
+    });
+};
+
+exports.professionalPortfolioModel = (db) => {
+    // Portfolio belongs to professional profile
+    db.professionalPortfolio.belongsTo(db.professionalProfile, {
+        foreignKey: 'professionalId',
+        as: 'professional'
+    });
+};
+
+exports.professionalReviewsModel = (db) => {
+    // Review belongs to professional profile
+    db.professionalReviews.belongsTo(db.professionalProfile, {
+        foreignKey: 'professionalId',
+        as: 'professional'
+    });
+
+    // Review belongs to client (user)
+    db.professionalReviews.belongsTo(db.user, {
+        foreignKey: 'clientId',
+        as: 'client'
+    });
+
+    // Review belongs to booking
+    db.professionalReviews.belongsTo(db.professionalBookings, {
+        foreignKey: 'bookingId',
+        as: 'booking'
+    });
+};
+
+exports.professionalBookingsModel = (db) => {
+    // Booking belongs to professional profile
+    db.professionalBookings.belongsTo(db.professionalProfile, {
+        foreignKey: 'professionalId',
+        as: 'professional'
+    });
+
+    // Booking belongs to client (user)
+    db.professionalBookings.belongsTo(db.user, {
+        foreignKey: 'clientId',
+        as: 'client'
+    });
+
+    // Booking belongs to service
+    db.professionalBookings.belongsTo(db.professionalServices, {
+        foreignKey: 'serviceId',
+        as: 'service'
+    });
+
+    // Booking has one review
+    db.professionalBookings.hasOne(db.professionalReviews, {
+        foreignKey: 'bookingId',
+        as: 'review'
+    });
+
+    // Scopes for professional bookings
+    db.professionalBookings.addScope('professional', {
+        include: {
+            model: db.professionalProfile,
+            attributes: ['id', 'title', 'location', 'hourlyRate', 'currency'],
+            as: 'professional',
+            include: {
+                model: db.user,
+                attributes: ['id', 'fullName', 'email', 'profilePicture'],
+                as: 'user'
+            },
+            required: true
+        }
+    });
+
+    db.professionalBookings.addScope('client', {
+        include: {
+            model: db.user,
+            attributes: ['id', 'fullName', 'email', 'profilePicture'],
+            as: 'client',
+            required: true
+        }
+    });
+
+    db.professionalBookings.addScope('service', {
+        include: {
+            model: db.professionalServices,
+            attributes: ['id', 'serviceName', 'serviceType', 'price', 'currency', 'duration'],
+            as: 'service',
+            required: true
+        }
+    });
+
+    db.professionalBookings.addScope('review', {
+        include: {
+            model: db.professionalReviews,
+            attributes: ['id', 'rating', 'comment', 'createdAt'],
+            as: 'review',
+            required: false
+        }
+    });
+};
+
+exports.professionalAvailabilityModel = (db) => {
+    // Availability belongs to professional profile
+    db.professionalAvailability.belongsTo(db.professionalProfile, {
+        foreignKey: 'professionalId',
+        as: 'professional'
+    });
+};
+
+exports.professionalEquipmentModel = (db) => {
+    // Equipment belongs to professional profile
+    db.professionalEquipment.belongsTo(db.professionalProfile, {
+        foreignKey: 'professionalId',
+        as: 'professional'
+    });
+};
+
+// Category model associations
+exports.categoryModel = (db) => {
+    // Self-referential association for parent-child categories
+    db.category.hasMany(db.category, { foreignKey: 'parentId', as: 'subcategories' });
+    db.category.belongsTo(db.category, { foreignKey: 'parentId', as: 'parent' });
+    
+    // Many-to-many relationship with professionals through junction table
+    db.category.belongsToMany(db.professionalProfile, {
+        through: db.professionalCategory,
+        foreignKey: 'categoryId',
+        otherKey: 'professionalId',
+        as: 'professionals'
+    });
+    
+    db.category.hasMany(db.professionalCategory, { foreignKey: 'categoryId' });
+    
+    // Scopes for category queries
+    db.category.addScope('active', {
+        where: { isActive: true, isDeleted: false }
+    });
+    
+    db.category.addScope('withSubcategories', {
+        include: [{
+            model: db.category,
+            as: 'subcategories',
+            where: { isActive: true, isDeleted: false },
+            required: false
+        }]
+    });
+    
+    db.category.addScope('withParent', {
+        include: [{
+            model: db.category,
+            as: 'parent',
+            attributes: ['id', 'name', 'slug']
+        }]
+    });
+};
+
+// Professional Category junction model associations
+exports.professionalCategoryModel = (db) => {
+    db.professionalCategory.belongsTo(db.professionalProfile, { foreignKey: 'professionalId', as: 'professional' });
+    db.professionalCategory.belongsTo(db.category, { foreignKey: 'categoryId', as: 'category' });
+};
