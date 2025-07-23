@@ -47,7 +47,6 @@ module.exports = (sequelize) => {
         modelName: 'professionalCategory',
         tableName: 'professionalCategories',
         timestamps: true,
-        paranoid: true,
         indexes: [
             {
                 fields: ['professionalId']
