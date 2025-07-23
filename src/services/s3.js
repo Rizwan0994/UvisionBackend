@@ -14,17 +14,37 @@ const s3bucket = new AWS.S3({
 });
 
 exports.generateS3PresignURL = async (data) => {
-
     return new Promise(async (resolve, reject) => {
         try {
+            const { fileName, fileType, fileCategory = 'general' } = data;
+            
+            // Generate organized S3 key based on category and date
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            
+            const fileExtension = fileName.split(".").pop();
+            const uniqueFileName = `${uuidv4()}.${fileExtension}`;
+            
+            // Organize files by category and date
+            const s3Key = `${fileCategory}/${year}/${month}/${day}/${uniqueFileName}`;
+            
             const url = await s3bucket.getSignedUrlPromise("putObject", {
                 Bucket: S3_BUCKET_NAME,
-                Key: `${uuidv4()}.${data.fileName.split(".").pop()}`,
-                ContentType: data.fileType,
-                // Acl: "public-read",
-                Expires: 60 * 600
+                Key: s3Key,
+                ContentType: fileType,
+                // Acl: "public-read", // Uncomment if you want files to be publicly accessible
+                Expires: 60 * 600 // 10 hours
             });
-            resolve(url);
+            
+            resolve({
+                presignedUrl: url,
+                s3Key: s3Key,
+                fileName: uniqueFileName,
+                originalFileName: fileName,
+                publicUrl: `https://${S3_BUCKET_NAME}.s3.${S3_BUCKET_REGION}.amazonaws.com/${s3Key}`
+            });
         } catch (error) {
             reject(error);
         }
