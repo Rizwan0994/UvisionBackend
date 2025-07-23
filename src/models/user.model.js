@@ -85,10 +85,6 @@ module.exports = (sequelize) => {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },
-        fontSize: {
-            type: DataTypes.INTEGER,
-            defaultValue : 14
-        },
         mainDesignation: DataTypes.STRING,
         address: DataTypes.STRING,
         phone: DataTypes.STRING,

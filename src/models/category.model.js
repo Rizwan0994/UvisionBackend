@@ -44,15 +44,6 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'Category color code for UI'
         },
-        parentId: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-            references: {
-                model: 'categories',
-                key: 'id'
-            },
-            comment: 'Parent category ID for subcategories'
-        },
         sortOrder: {
             type: DataTypes.INTEGER,
             allowNull: true,
@@ -81,9 +72,6 @@ module.exports = (sequelize) => {
             {
                 fields: ['slug'],
                 unique: true
-            },
-            {
-                fields: ['parentId']
             },
             {
                 fields: ['isActive', 'isDeleted']

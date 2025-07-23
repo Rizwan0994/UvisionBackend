@@ -43,14 +43,6 @@ router.post('/profile', jwtValidation, catchAsync(async function _createOrUpdate
     let data = await getMyProfile(req.loginUser);
     res.success(data);
 }))
-.get('/profile/:userId', catchAsync(async function _getProfile(req, res) {
-    let data = await getProfile(req.params.userId);
-    res.success(data);
-}))
-.post('/search', catchAsync(async function _searchProfessionals(req, res) {
-    let data = await searchProfessionals(req.body);
-    res.success(data);
-}))
 .patch('/availability', jwtValidation, catchAsync(async function _updateAvailability(req, res) {
     let data = await updateAvailability(req.body.isAvailable, req.loginUser);
     res.success(data);

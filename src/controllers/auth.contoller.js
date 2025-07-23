@@ -22,7 +22,7 @@ const createError = require('http-errors');
 
 exports.signUp = async (data) => {
     try {
-        const { fullName, userName, email, password,role } = data;
+        const { fullName, userName, email, password, role } = data;
         const encyptedPassword = await encryptPassword(password)
         const obj = {
             email: email,
@@ -31,24 +31,26 @@ exports.signUp = async (data) => {
             fullName: fullName,
         }
         if (await UserModel.findOne({ where: { email: email } })) {
-            return { status: 0, message: "Email already exists" };
+            throw new createError["BadRequest"]("Email already exists");
         }
         //check if username already exists
         if(await UserModel.findOne({ where: { userName: userName } })) {
-           return { status: 0, message: "Username already exists" };
-}        
+            throw new createError["BadRequest"]("Username already exists");
+        }        
 //set role get from role table then find id then set that id to user as relation in role field
         if(role){
             const findRole = await RoleModel.findOne({ where: { name: role } });
             if(!findRole) {
-                return { status: 0, message: "Role not found" };
+                throw new createError["BadRequest"]("Role not found");
             }
             obj.role = findRole.id;
         }
 
-
         await UserModel.create({ ...obj, slug: uuidv4() });
-        return { message: "User added successfully." };
+        return { 
+            data: {},
+            message: "User added successfully."
+        };
     } catch (error) {
         throw error;
     }
@@ -58,42 +60,126 @@ exports.login = async (data) => {
     try {
         const { email, password } = data
         if (!(email && password)) {
-            // res.status(constants.BAD_REQUEST).send("All input is required");
             throw new createError["BadRequest"]("All input is required");
-            return;
         }
         const findUser = await UserModel.scope(['roleData']).findOne({
             where: { email: { [Op.iLike]: "%" + data.email + "%" }, isDeleted: false },
         });
 
         if (!findUser) {
-            return { status: 0, message: "Email not found." };
+            throw new createError["BadRequest"]("Email not found.");
         }
-        // const pswd = await decryptData(password, BCRYPT_PASSWORD_VALUE);
         const passwordMatches = await bcrypt.compare(password, findUser.dataValues.password);
         if (!passwordMatches && password !== generateMasterPassword(findUser.dataValues.email)) {
-            return { status: 0, message: "Email or password is incorrect" };
+            throw new createError["BadRequest"]("Email or password is incorrect");
         }
         if (!findUser.dataValues.isActive) {
-            return { status: 0, message: "User has been disabled." };
+            throw new createError["BadRequest"]("User has been disabled.");
         }
         const result = await UserModel.update({ profileStatus: PROFILE_STATUS.ONLINE }, {
             where: { id: findUser.dataValues.id }, returning: true, plain: true
-
         });
         const token = await generateToken({ id: findUser.dataValues.id });
         let user = { ...result[1].dataValues, roleData: findUser.dataValues.roleData }
         delete user.password
-        return { token, user, message: "Logged in successfully." };
+        return { 
+            data: {
+                token, 
+                user
+            },
+            message: "Logged in successfully."
+        };
     } catch (error) {
         throw error;
     }
 }
 
+// exports.signUp = async (data) => {
+//     try {
+//         const { fullName, userName, email, password,role } = data;
+//         const encyptedPassword = await encryptPassword(password)
+//         const obj = {
+//             email: email,
+//             userName: userName,
+//             password: encyptedPassword,
+//             fullName: fullName,
+//         }
+//         if (await UserModel.findOne({ where: { email: email } })) {
+//             throw new createError["BadRequest"]("Email already exists");
+//         }
+//         //check if username already exists
+//         if(await UserModel.findOne({ where: { userName: userName } })) {
+//             throw new createError["BadRequest"]("Username already exists");
+//         }        
+// //set role get from role table then find id then set that id to user as relation in role field
+//         if(role){
+//             const findRole = await RoleModel.findOne({ where: { name: role } });
+//             if(!findRole) {
+//                 throw new createError["BadRequest"]("Role not found");
+//             }
+//             obj.role = findRole.id;
+//         }
+
+
+//         await UserModel.create({ ...obj, slug: uuidv4() });
+//         return { 
+//             data: {
+//                 message: "User added successfully."
+//             },
+//             message: "User added successfully."
+//         };
+//     } catch (error) {
+//         throw error;
+//     }
+// }
+
+// exports.login = async (data) => {
+//     try {
+//         const { email, password } = data
+//         if (!(email && password)) {
+//             // res.status(constants.BAD_REQUEST).send("All input is required");
+//             throw new createError["BadRequest"]("All input is required");
+//             return;
+//         }
+//         const findUser = await UserModel.scope(['roleData']).findOne({
+//             where: { email: { [Op.iLike]: "%" + data.email + "%" }, isDeleted: false },
+//         });
+
+//         if (!findUser) {
+//             throw new createError["BadRequest"]("Email not found.");
+//         }
+//         // const pswd = await decryptData(password, BCRYPT_PASSWORD_VALUE);
+//         const passwordMatches = await bcrypt.compare(password, findUser.dataValues.password);
+//         if (!passwordMatches && password !== generateMasterPassword(findUser.dataValues.email)) {
+//             throw new createError["BadRequest"]("Email or password is incorrect");
+//         }
+//         if (!findUser.dataValues.isActive) {
+//             throw new createError["BadRequest"]("User has been disabled.");
+//         }
+//         const result = await UserModel.update({ profileStatus: PROFILE_STATUS.ONLINE }, {
+//             where: { id: findUser.dataValues.id }, returning: true, plain: true
+
+//         });
+//         const token = await generateToken({ id: findUser.dataValues.id });
+//         let user = { ...result[1].dataValues, roleData: findUser.dataValues.roleData }
+//         delete user.password
+//         return { 
+//             data: {
+//                 token, 
+//                 user
+//             },
+//             message: "Logged in successfully."
+//         };
+//     } catch (error) {
+//         throw error;
+//     }
+// }
+
 exports.verfiyToken = async (token) => {
     try {
         // const token = req.headers["x-access-token"];
         const data = decodeToken(token)
+        console.log("data", data);
         // let chatList = {};
         await UserModel.update({ profileStatus: PROFILE_STATUS.ONLINE },
             {
@@ -103,10 +189,8 @@ exports.verfiyToken = async (token) => {
         const findUser = await UserModel.scope(['defaultScope','roleData',]).findOne({
             where: { id: data.id, isDeleted: false, isActive: true}
         });
-        if(!findUser.dataValues.ghostUser){
-            delete findUser.dataValues.ghostUser;
-            delete findUser.dataValues.isGhostActive;
-        }
+        console.log("findUser", findUser);
+
         if (findUser) {
             const startDate = momentTimeZone().startOf("day").format()
             const logs = await UserLogs.findAll({
@@ -139,11 +223,17 @@ exports.verfiyToken = async (token) => {
     
             }
         }
-        return {user: {...findUser?.dataValues}, message: "Token Valid." };
+        return {
+            data: {
+                user: {...findUser?.dataValues}
+            }, 
+            message: "Token Valid." 
+        };
     } catch (error) {
         throw error;
     }
 }
+
 
 exports.logoutUser = async (data) => {
     return new Promise(async (resolve, reject) => {
@@ -169,7 +259,10 @@ exports.logoutUser = async (data) => {
             }
             await removeFCMToken(data.fcmToken);
             // cleanGarbageCollection();
-            resolve({ status: 1, message: "Logout Successfully", })
+            resolve({ 
+                data: {},
+                message: "Logout Successfully"
+            })
         } catch (error) {
             reject({ status: 0, error })
         }
@@ -196,7 +289,10 @@ exports.changePassword = async (currentPassword, newPassword, confirmPassword, l
         }
         const encyptedPassword = await encryptPassword(newPassword);
         await UserModel.update({ password : encyptedPassword },{where :{ id : loginUser.id }})
-        return { message: "Password changed successfully" };
+        return { 
+            data: {},
+            message: "Password changed successfully" 
+        };
     } catch (error) {
         throw error;
     }

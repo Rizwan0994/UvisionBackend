@@ -630,10 +630,6 @@ exports.professionalAvailabilityModel = (db) => {
 
 // Category model associations
 exports.categoryModel = (db) => {
-    // Self-referential association for parent-child categories
-    db.category.hasMany(db.category, { foreignKey: 'parentId', as: 'subcategories' });
-    db.category.belongsTo(db.category, { foreignKey: 'parentId', as: 'parent' });
-    
     // Many-to-many relationship with professionals through junction table
     db.category.belongsToMany(db.professionalProfile, {
         through: db.professionalCategory,
@@ -647,23 +643,6 @@ exports.categoryModel = (db) => {
     // Scopes for category queries
     db.category.addScope('active', {
         where: { isActive: true, isDeleted: false }
-    });
-    
-    db.category.addScope('withSubcategories', {
-        include: [{
-            model: db.category,
-            as: 'subcategories',
-            where: { isActive: true, isDeleted: false },
-            required: false
-        }]
-    });
-    
-    db.category.addScope('withParent', {
-        include: [{
-            model: db.category,
-            as: 'parent',
-            attributes: ['id', 'name', 'slug']
-        }]
     });
 };
 

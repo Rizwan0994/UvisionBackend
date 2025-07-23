@@ -6,6 +6,7 @@ const {
     Op
 } = require('../models');
 const ProfessionalMetricsService = require('../services/professionalMetrics.service');
+const createError = require('http-errors');
 
 /**
  * Create or update professional profile
@@ -85,7 +86,9 @@ const createOrUpdateProfile = async (data, loginUser) => {
         });
 
         return {
-            profile: updatedProfile,
+            data: {
+                profile: updatedProfile
+            },
             message: 'Professional profile updated successfully'
         };
 
@@ -120,15 +123,17 @@ const getMyProfile = async (loginUser) => {
         });
 
         if (!profile) {
-            return { status: 0, message: 'Professional profile not found' };
+            throw new createError["NotFound"]('Professional profile not found');
         }
 
         // Get current metrics
         const metrics = await ProfessionalMetricsService.getMetrics(profile.id);
 
         return {
-            profile: profile,
-            metrics: metrics,
+            data: {
+                profile: profile,
+                metrics: metrics
+            },
             message: 'Profile retrieved successfully'
         };
 
@@ -165,7 +170,7 @@ const getProfile = async (professionalId) => {
         });
 
         if (!profile) {
-            return { status: 0, message: 'Professional profile not found' };
+            throw new createError["NotFound"]('Professional profile not found');
         }
 
         // Return public profile (exclude sensitive metrics)
@@ -181,7 +186,9 @@ const getProfile = async (professionalId) => {
         };
 
         return {
-            profile: publicProfile,
+            data: {
+                profile: publicProfile
+            },
             message: 'Profile retrieved successfully'
         };
 
@@ -227,10 +234,6 @@ const searchProfessionals = async (data) => {
 
         if (minRating) {
             whereClause.rating = { [Op.gte]: minRating };
-        }
-
-        if (maxRate) {
-            whereClause.hourlyRate = { [Op.lte]: maxRate };
         }
 
         const includeOptions = [
@@ -280,12 +283,14 @@ const searchProfessionals = async (data) => {
         }));
 
         return {
-            professionals: cleanedProfiles,
-            pagination: {
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(count / limit),
-                totalItems: count,
-                itemsPerPage: parseInt(limit)
+            data: {
+                professionals: cleanedProfiles,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(count / limit),
+                    totalItems: count,
+                    itemsPerPage: parseInt(limit)
+                }
             },
             message: 'Professionals retrieved successfully'
         };
@@ -308,13 +313,15 @@ const updateAvailability = async (isAvailable, loginUser) => {
         });
 
         if (!profile) {
-            return { status: 0, message: 'Professional profile not found' };
+            throw new createError["NotFound"]('Professional profile not found');
         }
 
         await profile.update({ isAvailable });
 
         return {
-            isAvailable: profile.isAvailable,
+            data: {
+                isAvailable: profile.isAvailable
+            },
             message: 'Availability updated successfully'
         };
 
@@ -336,13 +343,15 @@ const recalculateMetrics = async (loginUser) => {
         });
 
         if (!profile) {
-            return { status: 0, message: 'Professional profile not found' };
+            throw new createError["NotFound"]('Professional profile not found');
         }
 
         const metrics = await ProfessionalMetricsService.recalculateAllMetrics(profile.id);
 
         return {
-            metrics: metrics,
+            data: {
+                metrics: metrics
+            },
             message: 'Metrics recalculated successfully'
         };
 
@@ -387,7 +396,6 @@ function calculateProfileCompleteness(profile) {
         'specialization',
         'bio',
         'location',
-        'hourlyRate',
         'experienceYears',
         'languages',
         'coverImage'

@@ -27,11 +27,14 @@ router.use('/auth', require("./auth.routes"));
 // Categories routes (public)
 router.use('/categories', require("./categories.routes"));
 
+// Public professional routes (search and profiles)
+router.use('/professional', require("./professionalSearch.routes"));
+
 // Cron routes
 router.use('/cron', require("./cron.routes"));
 
 // Middleware for JWT validation and Excel download log
-router.use(jwtValidation);
+// router.use(jwtValidation);
 router.use(excelDownloadLog);
 router.use('/user', require("./user.routes"));
 router.use('/profile', require("./profile.routes"));
@@ -47,6 +50,6 @@ router.use('/organization', require("./organization.routes"));
 router.use('/messageEmoji', require("./messageEmoji.routes"));
 router.use('/companyRole', require("./companyRole.routes"));
 router.use('/designationGroup', require("./designationGroup.routes"));
-router.use('/professional', require("./professional.routes"));
+router.use('/professional-dashboard', require("./professional.routes"));
 router.use('/booking', require("./booking.routes"));
 module.exports = router;

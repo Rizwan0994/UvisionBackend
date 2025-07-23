@@ -8,8 +8,6 @@ const {
  */
 const getAllCategories = async (data = {}) => {
     const {
-        includeSubcategories = true,
-        parentId = null,
         isActive = true,
         page = 1,
         limit = 100
@@ -24,51 +22,28 @@ const getAllCategories = async (data = {}) => {
             whereClause.isActive = isActive;
         }
 
-        if (parentId !== null) {
-            whereClause.parentId = parentId;
-        }
-
-        const includeOptions = [];
-        
-        if (includeSubcategories && parentId === null) {
-            includeOptions.push({
-                model: CategoryModel,
-                as: 'subcategories',
-                attributes: ['id', 'name', 'slug', 'description', 'icon', 'color', 'sortOrder'],
-                where: { isActive: true, isDeleted: false },
-                required: false
-            });
-        }
-
-        if (parentId !== null) {
-            includeOptions.push({
-                model: CategoryModel,
-                as: 'parent',
-                attributes: ['id', 'name', 'slug', 'icon', 'color']
-            });
-        }
-
         const offset = (page - 1) * limit;
 
         const { count, rows } = await CategoryModel.findAndCountAll({
             where: whereClause,
-            include: includeOptions,
+            attributes: ['id', 'name', 'slug', 'description', 'icon', 'color', 'sortOrder', 'isActive'],
             order: [['sortOrder', 'ASC'], ['name', 'ASC']],
             limit: parseInt(limit),
-            offset: offset
+            offset: parseInt(offset)
         });
 
         return {
-            categories: rows,
-            pagination: {
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(count / limit),
-                totalItems: count,
-                itemsPerPage: parseInt(limit)
+            data: {
+                categories: rows,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(count / limit),
+                    totalItems: count,
+                    itemsPerPage: parseInt(limit)
+                }
             },
             message: 'Categories retrieved successfully'
         };
-
     } catch (error) {
         console.error('Error in getAllCategories:', error);
         throw error;
@@ -93,21 +68,7 @@ const getCategoryById = async (identifier) => {
 
         const categoryData = await CategoryModel.findOne({
             where: whereClause,
-            include: [
-                {
-                    model: CategoryModel,
-                    as: 'subcategories',
-                    attributes: ['id', 'name', 'slug', 'description', 'icon', 'color', 'sortOrder'],
-                    where: { isActive: true, isDeleted: false },
-                    required: false
-                },
-                {
-                    model: CategoryModel,
-                    as: 'parent',
-                    attributes: ['id', 'name', 'slug', 'icon', 'color'],
-                    required: false
-                }
-            ]
+            attributes: ['id', 'name', 'slug', 'description', 'icon', 'color', 'sortOrder', 'isActive']
         });
 
         if (!categoryData) {
@@ -115,71 +76,14 @@ const getCategoryById = async (identifier) => {
         }
 
         return {
-            category: categoryData,
+            data: {
+                category: categoryData
+            },
             message: 'Category retrieved successfully'
         };
 
     } catch (error) {
         console.error('Error in getCategoryById:', error);
-        throw error;
-    }
-};
-
-/**
- * Get main categories only (no subcategories)
- */
-const getMainCategories = async () => {
-    try {
-        const categories = await CategoryModel.findAll({
-            where: {
-                parentId: null,
-                isActive: true,
-                isDeleted: false
-            },
-            attributes: ['id', 'name', 'slug', 'description', 'icon', 'color', 'sortOrder'],
-            order: [['sortOrder', 'ASC'], ['name', 'ASC']]
-        });
-
-        return {
-            categories: categories,
-            message: 'Main categories retrieved successfully'
-        };
-
-    } catch (error) {
-        console.error('Error in getMainCategories:', error);
-        throw error;
-    }
-};
-
-/**
- * Get subcategories for a specific parent category
- */
-const getSubcategories = async (parentId) => {
-    try {
-        const subcategories = await CategoryModel.findAll({
-            where: {
-                parentId: parentId,
-                isActive: true,
-                isDeleted: false
-            },
-            attributes: ['id', 'name', 'slug', 'description', 'icon', 'color', 'sortOrder'],
-            include: [
-                {
-                    model: CategoryModel,
-                    as: 'parent',
-                    attributes: ['id', 'name', 'slug']
-                }
-            ],
-            order: [['sortOrder', 'ASC'], ['name', 'ASC']]
-        });
-
-        return {
-            subcategories: subcategories,
-            message: 'Subcategories retrieved successfully'
-        };
-
-    } catch (error) {
-        console.error('Error in getSubcategories:', error);
         throw error;
     }
 };
@@ -207,27 +111,21 @@ const searchCategories = async (data) => {
 
         const { count, rows } = await CategoryModel.findAndCountAll({
             where: whereClause,
-            attributes: ['id', 'name', 'slug', 'description', 'icon', 'color', 'parentId'],
-            include: [
-                {
-                    model: CategoryModel,
-                    as: 'parent',
-                    attributes: ['id', 'name', 'slug'],
-                    required: false
-                }
-            ],
+            attributes: ['id', 'name', 'slug', 'description', 'icon', 'color', 'sortOrder'],
             order: [['sortOrder', 'ASC'], ['name', 'ASC']],
             limit: parseInt(limit),
             offset: offset
         });
 
         return {
-            categories: rows,
-            pagination: {
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(count / limit),
-                totalItems: count,
-                itemsPerPage: parseInt(limit)
+            data: {
+                categories: rows,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(count / limit),
+                    totalItems: count,
+                    itemsPerPage: parseInt(limit)
+                }
             },
             message: 'Categories search completed successfully'
         };
@@ -241,7 +139,5 @@ const searchCategories = async (data) => {
 module.exports = {
     getAllCategories,
     getCategoryById,
-    getMainCategories,
-    getSubcategories,
     searchCategories
 };
