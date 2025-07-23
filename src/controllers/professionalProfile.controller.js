@@ -215,7 +215,7 @@ const getProfile = async (professionalId) => {
  */
 const searchProfessionals = async (data) => {
     const {
-        title,
+        name,
         location,
         minRating,
         maxRate,
@@ -233,12 +233,10 @@ const searchProfessionals = async (data) => {
             isDeleted: false
         };
 
-        if (title) {
-            whereClause[Op.or] = [
-                { title: { [Op.iLike]: `%${title}%` } },
-                { specialization: { [Op.iLike]: `%${title}%` } }
-            ];
-        }
+    
+  
+
+         
 
         if (location) {
             whereClause.location = { [Op.iLike]: `%${location}%` };
@@ -252,7 +250,8 @@ const searchProfessionals = async (data) => {
             {
                 model: UserModel,
                 as: 'user',
-                attributes: ['id', 'fullName', 'userName', 'profilePicture']
+                attributes: ['id', 'fullName', 'userName', 'profilePicture'],
+                required: false // Will be set to true if name search is used
             },
             {
                 model: CategoryModel,
@@ -261,6 +260,16 @@ const searchProfessionals = async (data) => {
                 through: { attributes: ['isPrimary'] }
             }
         ];
+
+        //search by user name from usertable of professional
+        if (name) {
+            whereClause[Op.or] = [
+                { '$user.fullName$': { [Op.iLike]: `%${name}%` } },
+                { '$user.userName$': { [Op.iLike]: `%${name}%` } }
+            ];
+            // Make user join required when searching by name
+            includeOptions[0].required = true;
+        }
 
         // Add category filtering if specified
         if (categories && categories.length > 0) {

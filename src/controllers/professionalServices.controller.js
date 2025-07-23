@@ -18,7 +18,7 @@ const createService = async (data, loginUser) => {
         });
 
         if (!professionalProfile) {
-            return { status: 0, message: 'Professional profile not found' };
+            return { status: 0, message: 'Professional profile not found', data: null };
         }
 
         const serviceData = {
@@ -29,7 +29,9 @@ const createService = async (data, loginUser) => {
         const service = await ProfessionalServicesModel.create(serviceData);
 
         return {
-            service: service,
+            data: {
+                service: service
+            },
             message: 'Service created successfully'
         };
     } catch (error) {
@@ -51,7 +53,7 @@ const getMyServices = async (loginUser) => {
         });
 
         if (!professionalProfile) {
-            return { status: 0, message: 'Professional profile not found' };
+            return { status: 0, message: 'Professional profile not found', data: null };
         }
 
         const services = await ProfessionalServicesModel.findAll({
@@ -59,11 +61,13 @@ const getMyServices = async (loginUser) => {
                 professionalId: professionalProfile.id,
                 isDeleted: false
             },
-            order: [['displayOrder', 'ASC'], ['createdAt', 'DESC']]
+            order: [ ['createdAt', 'DESC']]
         });
 
         return {
-            services: services,
+            data: {
+                services: services
+            },
             message: 'Services retrieved successfully'
         };
     } catch (error) {
@@ -85,7 +89,7 @@ const updateService = async (serviceId, data, loginUser) => {
         });
 
         if (!professionalProfile) {
-            return { status: 0, message: 'Professional profile not found' };
+            return { status: 0, message: 'Professional profile not found', data: null };
         }
 
         const service = await ProfessionalServicesModel.findOne({
@@ -97,13 +101,15 @@ const updateService = async (serviceId, data, loginUser) => {
         });
 
         if (!service) {
-            return { status: 0, message: 'Service not found' };
+            return { status: 0, message: 'Service not found', data: null };
         }
 
         await service.update(data);
 
         return {
-            service: service,
+            data: {
+                service: service
+            },
             message: 'Service updated successfully'
         };
     } catch (error) {
@@ -125,7 +131,7 @@ const deleteService = async (serviceId, loginUser) => {
         });
 
         if (!professionalProfile) {
-            return { status: 0, message: 'Professional profile not found' };
+            return { status: 0, message: 'Professional profile not found', data: null };
         }
 
         const service = await ProfessionalServicesModel.findOne({
@@ -137,12 +143,13 @@ const deleteService = async (serviceId, loginUser) => {
         });
 
         if (!service) {
-            return { status: 0, message: 'Service not found' };
+            return { status: 0, message: 'Service not found', data: null };
         }
 
         await service.update({ isDeleted: true });
 
         return {
+            data: null,
             message: 'Service deleted successfully'
         };
     } catch (error) {

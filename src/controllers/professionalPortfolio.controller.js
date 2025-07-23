@@ -12,8 +12,7 @@ const addPortfolioItem = async (req, res) => {
     try {
         const userId = req.user.id;
         const {
-            title,
-            description,
+           
             mediaType,
             mediaUrl,
             thumbnailUrl,
