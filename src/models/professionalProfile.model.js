@@ -31,7 +31,7 @@ module.exports = (sequelize) => {
             allowNull: false,
             comment: 'Professional title (e.g., Photographer, Designer)'
         },
-        specialization: {
+        specialization: {  //photographer, videographer, etc.
             type: DataTypes.STRING,
             allowNull: true,
             comment: 'Area of specialization'
@@ -41,11 +41,7 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'Professional bio/about section'
         },
-        experienceYears: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-            comment: 'Years of experience'
-        },
+
         level: {
             type: DataTypes.STRING,
             allowNull: true,
@@ -67,17 +63,6 @@ module.exports = (sequelize) => {
             allowNull: true,
             defaultValue: 'New Professional',
             comment: 'Average response time - automatically calculated by system based on message response patterns'
-        },
-        hourlyRate: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
-            comment: 'Hourly rate for services'
-        },
-        currency: {
-            type: DataTypes.STRING(3),
-            allowNull: true,
-            defaultValue: 'EUR',
-            comment: 'Currency for pricing'
         },
         rating: {
             type: DataTypes.DECIMAL(2, 1),
@@ -102,11 +87,11 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'Date when professional joined'
         },
-        isVerified: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-            comment: 'Whether professional is verified'
-        },
+        // isVerified: {
+        //     type: DataTypes.BOOLEAN,
+        //     defaultValue: false,
+        //     comment: 'Whether professional is verified'
+        // },
         isAvailable: {
             type: DataTypes.BOOLEAN,
             defaultValue: true,
@@ -121,6 +106,11 @@ module.exports = (sequelize) => {
             type: DataTypes.STRING(1000),
             allowNull: true,
             comment: 'Cover image URL for profile'
+        },
+        equipments: {
+            type: DataTypes.JSON,
+            allowNull: true,
+            comment: 'Array of equipments professional'   
         },
         // System-calculated metrics for automatic level and response time calculation
         totalMessages: {

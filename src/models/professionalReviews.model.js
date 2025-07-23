@@ -60,76 +60,7 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'Review comment/feedback'
         },
-        serviceType: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            comment: 'Type of service reviewed'
-        },
-        workQuality: {
-            type: DataTypes.DECIMAL(2, 1),
-            allowNull: true,
-            comment: 'Rating for work quality'
-        },
-        communication: {
-            type: DataTypes.DECIMAL(2, 1),
-            allowNull: true,
-            comment: 'Rating for communication'
-        },
-        timeliness: {
-            type: DataTypes.DECIMAL(2, 1),
-            allowNull: true,
-            comment: 'Rating for timeliness'
-        },
-        professionalism: {
-            type: DataTypes.DECIMAL(2, 1),
-            allowNull: true,
-            comment: 'Rating for professionalism'
-        },
-        valueForMoney: {
-            type: DataTypes.DECIMAL(2, 1),
-            allowNull: true,
-            comment: 'Rating for value for money'
-        },
-        wouldRecommend: {
-            type: DataTypes.BOOLEAN,
-            allowNull: true,
-            comment: 'Whether client would recommend'
-        },
-        projectDuration: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            comment: 'Duration of the project'
-        },
-        projectBudget: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            comment: 'Budget range of the project'
-        },
-        helpfulCount: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-            comment: 'Number of people who found review helpful'
-        },
-        isVerified: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-            comment: 'Whether review is verified'
-        },
-        isPublic: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true,
-            comment: 'Whether review is public'
-        },
-        professionalResponse: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-            comment: 'Professional response to review'
-        },
-        responseDate: {
-            type: DataTypes.DATE,
-            allowNull: true,
-            comment: 'Date when professional responded'
-        },
+
         isDeleted: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
@@ -153,7 +84,7 @@ module.exports = (sequelize) => {
                 fields: ['rating']
             },
             {
-                fields: ['isPublic', 'isDeleted']
+                fields: ['isDeleted']
             },
             {
                 fields: ['createdAt']

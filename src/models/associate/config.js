@@ -439,11 +439,6 @@ exports.professionalProfileModel = (db) => {
         as: 'availability'
     });
 
-    // Professional profile has many equipment
-    db.professionalProfile.hasMany(db.professionalEquipment, {
-        foreignKey: 'professionalId',
-        as: 'equipment'
-    });
 
     // Many-to-many relationship with categories through junction table
     db.professionalProfile.belongsToMany(db.category, {
@@ -631,13 +626,7 @@ exports.professionalAvailabilityModel = (db) => {
     });
 };
 
-exports.professionalEquipmentModel = (db) => {
-    // Equipment belongs to professional profile
-    db.professionalEquipment.belongsTo(db.professionalProfile, {
-        foreignKey: 'professionalId',
-        as: 'professional'
-    });
-};
+
 
 // Category model associations
 exports.categoryModel = (db) => {

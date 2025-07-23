@@ -30,16 +30,16 @@ module.exports = (sequelize) => {
             allowNull: false,
             comment: 'Name of the service'
         },
-        serviceType: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            comment: 'Type/category of service'
-        },
-        description: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-            comment: 'Service description'
-        },
+        // serviceType: {
+        //     type: DataTypes.STRING,
+        //     allowNull: true,
+        //     comment: 'Type/category of service'
+        // },
+        // description: {
+        //     type: DataTypes.TEXT,
+        //     allowNull: true,
+        //     comment: 'Service description'
+        // },
         price: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
@@ -51,46 +51,27 @@ module.exports = (sequelize) => {
             defaultValue: 'EUR',
             comment: 'Currency for pricing'
         },
-        duration: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            comment: 'Estimated duration for service'
-        },
-        packages: {
-            type: DataTypes.JSON,
-            allowNull: true,
-            comment: 'Different packages/tiers for this service'
-        },
-        isPopular: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-            comment: 'Whether this is a popular service'
-        },
+
+        // isPopular: {
+        //     type: DataTypes.BOOLEAN,
+        //     defaultValue: false,
+        //     comment: 'Whether this is a popular service'
+        // },
         isActive: {
             type: DataTypes.BOOLEAN,
             defaultValue: true,
             comment: 'Whether service is active'
         },
-        displayOrder: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-            comment: 'Order for displaying services'
-        },
-        tags: {
-            type: DataTypes.JSON,
-            allowNull: true,
-            comment: 'Tags associated with service'
-        },
-        requirements: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-            comment: 'Requirements from client for this service'
-        },
-        deliverables: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-            comment: 'What client will receive'
-        },
+        // displayOrder: {
+        //     type: DataTypes.INTEGER,
+        //     defaultValue: 0,
+        //     comment: 'Order for displaying services'
+        // },
+        // tags: {
+        //     type: DataTypes.JSON,
+        //     allowNull: true,
+        //     comment: 'Tags associated with service'
+        // },
         isDeleted: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
@@ -107,9 +88,9 @@ module.exports = (sequelize) => {
             {
                 fields: ['isActive', 'isDeleted']
             },
-            {
-                fields: ['serviceType']
-            },
+            // {
+            //     fields: ['serviceType']
+            // },
             {
                 fields: ['price']
             }

@@ -49,6 +49,7 @@ db.sequelize = sequelize;
 db.Op = Sequelize.Op;
 
 db.user = require('./user.model')(sequelize);
+db.category = require('./category.model')(sequelize);
 db.chat = require('./chat.model')(sequelize);
 db.message = require('./message.model')(sequelize);
 db.chatUser = require('./chatUser.model')(sequelize);
@@ -84,11 +85,8 @@ db.professionalPortfolio = require('./professionalPortfolio.model')(sequelize);
 db.professionalReviews = require('./professionalReviews.model')(sequelize);
 db.professionalBookings = require('./professionalBookings.model')(sequelize);
 db.professionalAvailability = require('./professionalAvailability.model')(sequelize);
-db.professionalEquipment = require('./professionalEquipment.model')(sequelize);
 db.professionalCategory = require('./professionalCategory.model')(sequelize);
 
-// Category models
-db.category = require('./category.model')(sequelize);
 
 
 

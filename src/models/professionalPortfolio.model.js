@@ -52,65 +52,13 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'URL of the thumbnail image'
         },
-        category: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            comment: 'Category of the portfolio item'
-        },
-        tags: {
-            type: DataTypes.JSON,
-            allowNull: true,
-            comment: 'Array of tags for the portfolio item'
-        },
-        projectDate: {
-            type: DataTypes.DATE,
-            allowNull: true,
-            comment: 'Date when the project was completed'
-        },
-        clientName: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            comment: 'Name of the client (if applicable)'
-        },
-        projectType: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            comment: 'Type of project (wedding, corporate, etc.)'
-        },
-        location: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            comment: 'Location where the project was done'
-        },
-        equipment: {
-            type: DataTypes.JSON,
-            allowNull: true,
-            comment: 'Array of equipment used for the project'
-        },
-        isFeatured: {
-            type: DataTypes.BOOLEAN,
-            allowNull: false,
-            defaultValue: false,
-            comment: 'Whether this item is featured in portfolio'
-        },
         displayOrder: {
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 0,
             comment: 'Order in which to display the portfolio item'
         },
-        viewCount: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            defaultValue: 0,
-            comment: 'Number of times this portfolio item was viewed'
-        },
-        likeCount: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            defaultValue: 0,
-            comment: 'Number of likes for this portfolio item'
-        },
+
         isPublic: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
@@ -144,12 +92,6 @@ module.exports = (sequelize) => {
             },
             {
                 fields: ['mediaType']
-            },
-            {
-                fields: ['category']
-            },
-            {
-                fields: ['isFeatured']
             },
             {
                 fields: ['isPublic']
