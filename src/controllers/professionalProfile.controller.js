@@ -40,6 +40,13 @@ const createOrUpdateProfile = async (data, loginUser) => {
     }
 
     try {
+        //if profilePicture is provided then update in users table
+        if (data.profilePicture) {
+            await UserModel.update(
+                { profilePicture: data.profilePicture },
+                { where: { id: userId } }
+            );
+        }
         let profile = await ProfessionalProfileModel.findOne({
             where: { userId: userId }
         });
@@ -107,6 +114,11 @@ const getMyProfile = async (loginUser) => {
     try {
         const profile = await ProfessionalProfileModel.findOne({
             where: { userId: userId },
+            exclude: [
+                'title',
+                'deletedAt',
+                'isDeleted',
+            ],
             include: [
                 {
                     model: UserModel,
@@ -368,10 +380,12 @@ const recalculateMetrics = async (loginUser) => {
  */
 async function updateProfessionalCategories(professionalId, categories) {
     try {
+        console.log(`Updating categories for professional ID: ${professionalId}`, categories);
         // Remove existing categories
-        await ProfessionalCategoryModel.destroy({
+       const t= await ProfessionalCategoryModel.destroy({
             where: { professionalId: professionalId }
         });
+        console.log(`Removed ${t} existing categories for professional ID: ${professionalId}`);
 
         // Add new categories
         const categoryData = categories.map(category => ({
