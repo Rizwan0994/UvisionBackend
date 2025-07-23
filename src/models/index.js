@@ -49,6 +49,7 @@ db.sequelize = sequelize;
 db.Op = Sequelize.Op;
 
 db.user = require('./user.model')(sequelize);
+db.category = require('./category.model')(sequelize);
 db.chat = require('./chat.model')(sequelize);
 db.message = require('./message.model')(sequelize);
 db.chatUser = require('./chatUser.model')(sequelize);
@@ -76,6 +77,17 @@ db.cronReport = require('./cronReport.model')(sequelize);
 db.companyRole = require('./companyRole.model')(sequelize);
 db.designationGroup = require('./designationGroup.model')(sequelize);
 db.categoryChat = require("./categoryChat.model")(sequelize);
+
+// Professional models
+db.professionalProfile = require('./professionalProfile.model')(sequelize);
+db.professionalServices = require('./professionalServices.model')(sequelize);
+db.professionalPortfolio = require('./professionalPortfolio.model')(sequelize);
+db.professionalReviews = require('./professionalReviews.model')(sequelize);
+db.professionalBookings = require('./professionalBookings.model')(sequelize);
+db.professionalAvailability = require('./professionalAvailability.model')(sequelize);
+db.professionalCategory = require('./professionalCategory.model')(sequelize);
+
+
 
 
 require("./associate")(db);
