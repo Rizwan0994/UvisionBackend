@@ -1,4 +1,4 @@
-const { generateS3PresignURL, deleteMediaFromS3 } = require('../services/s3');
+const { generateS3PresignURL, deleteMediaFromS3, uploadFileToS3 } = require('../services/s3');
 const createError = require('http-errors');
 const path = require('path');
 
@@ -95,7 +95,7 @@ const getPresignedUrl = async (data) => {
 
 /**
  * Upload file directly to S3 using multipart form data
- * This is an alternative method if you want to handle upload through your server
+ * This method uploads the file server-side to S3 and returns the public URL
  */
 const uploadToS3 = async (file, data = {}) => {
     try {
@@ -103,7 +103,7 @@ const uploadToS3 = async (file, data = {}) => {
             throw new createError["BadRequest"]('No file provided');
         }
 
-        const { fileCategory = 'general' } = data;
+        const { category = 'general' } = data;
 
         // Validate file type
         const allowedMimeTypes = [
@@ -121,25 +121,24 @@ const uploadToS3 = async (file, data = {}) => {
             throw new createError["BadRequest"]('File size too large. Maximum size is 50MB');
         }
 
-        // Generate presigned URL for upload
-        const s3Response = await generateS3PresignURL({
+        // Upload file directly to S3
+        const s3Response = await uploadFileToS3(file.data, {
             fileName: file.name,
             fileType: file.mimetype,
-            fileCategory: fileCategory
+            fileCategory: category
         });
 
         return {
             data: {
-                presignedUrl: s3Response.presignedUrl,
                 s3Key: s3Response.s3Key,
                 fileName: s3Response.fileName,
                 originalFileName: s3Response.originalFileName,
                 publicUrl: s3Response.publicUrl,
                 fileType: file.mimetype,
                 fileSize: file.size,
-                fileCategory: fileCategory
+                fileCategory: category
             },
-            message: 'File upload URL generated successfully'
+            message: 'File uploaded successfully to S3'
         };
 
     } catch (error) {

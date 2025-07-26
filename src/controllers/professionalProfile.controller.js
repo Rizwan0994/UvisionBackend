@@ -41,9 +41,9 @@ const createOrUpdateProfile = async (data, loginUser) => {
 
     try {
         //if profilePicture is provided then update in users table
-        if (data.profilePicture) {
+        if (profileData.profileImage) {
             await UserModel.update(
-                { profilePicture: data.profilePicture },
+                { profilePicture: profileData.profileImage },
                 { where: { id: userId } }
             );
         }
