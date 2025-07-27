@@ -33,6 +33,9 @@ router.use('/professional', require("./professionalSearch.routes"));
 // Upload routes (has both public and protected endpoints)
 router.use('/upload', require("./upload.routes"));
 
+// Subscription routes (public webhook, authenticated for others)
+router.use('/subscription', require("./subscription.routes"));
+
 // Cron routes
 router.use('/cron', require("./cron.routes"));
 

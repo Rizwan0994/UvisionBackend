@@ -91,8 +91,7 @@ module.exports = (sequelize) => {
         isSilentMode: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
-        },
-
+        }
 
     }, {
         defaultScope: {

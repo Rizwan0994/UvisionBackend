@@ -23,13 +23,9 @@ const {
 } = require('../controllers/professionalBookingManagement.controller');
 const { 
     addPortfolioItem, 
-    getMyPortfolio, 
-    getPortfolioByProfessionalId, 
-    updatePortfolioItem, 
-    deletePortfolioItem, 
-    updatePortfolioOrder, 
-    getPortfolioCategories, 
-    incrementViewCount 
+    getMyPortfolio,
+    updatePortfolioItem,
+    deletePortfolioItem
 } = require('../controllers/professionalPortfolio.controller');
 const { jwtValidation } = require('../middleware/authentication');
 const catchAsync = require("../util/catchAsync").catchAsync;
@@ -93,37 +89,17 @@ router.post('/profile', jwtValidation, catchAsync(async function _createOrUpdate
 }))
 
 // Professional Portfolio Routes
-.post('/portfolio', jwtValidation, catchAsync(async function _addPortfolioItem(req, res) {
-    let data = await addPortfolioItem(req, res);
-    return data;
+.post('/portfolio', jwtValidation, catchAsync(async function _createOrUpdatePortfolioItem(req, res) {
+    let data = await addPortfolioItem(req.body, req.loginUser);
+    return res.success(data);
 }))
 .get('/portfolio/me', jwtValidation, catchAsync(async function _getMyPortfolio(req, res) {
     let data = await getMyPortfolio(req, res);
-    return data;
-}))
-.get('/portfolio/:professionalId', catchAsync(async function _getPortfolioByProfessionalId(req, res) {
-    let data = await getPortfolioByProfessionalId(req, res);
-    return data;
-}))
-.put('/portfolio/:portfolioId', jwtValidation, catchAsync(async function _updatePortfolioItem(req, res) {
-    let data = await updatePortfolioItem(req, res);
-    return data;
+    res.success(data);
 }))
 .delete('/portfolio/:portfolioId', jwtValidation, catchAsync(async function _deletePortfolioItem(req, res) {
-    let data = await deletePortfolioItem(req, res);
-    return data;
-}))
-.patch('/portfolio/order', jwtValidation, catchAsync(async function _updatePortfolioOrder(req, res) {
-    let data = await updatePortfolioOrder(req, res);
-    return data;
-}))
-.get('/portfolio/categories', catchAsync(async function _getPortfolioCategories(req, res) {
-    let data = await getPortfolioCategories(req, res);
-    return data;
-}))
-.patch('/portfolio/:portfolioId/view', catchAsync(async function _incrementViewCount(req, res) {
-    let data = await incrementViewCount(req, res);
-    return data;
+    let data = await deletePortfolioItem(req.params.portfolioId, req.loginUser);
+    res.success(data);
 }));
 
 module.exports = router;

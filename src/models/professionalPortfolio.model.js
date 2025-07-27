@@ -26,16 +26,6 @@ module.exports = (sequelize) => {
             },
             comment: 'Reference to professional profile'
         },
-        title: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            comment: 'Portfolio item title'
-        },
-        description: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-            comment: 'Portfolio item description'
-        },
         mediaType: {
             type: DataTypes.ENUM('image', 'video', 'document'),
             allowNull: false,

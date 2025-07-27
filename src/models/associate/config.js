@@ -15,6 +15,7 @@ exports.userModel = (db) => {
     db.user.hasOne(db.professionalProfile, { foreignKey: "userId", as: 'professionalProfile'});
     db.user.belongsTo(db.roles, {foreignKey: "role", sourceKey: 'id', as: 'roleData'});
     db.user.belongsTo(db.companyRole, {foreignKey: "companyRoleId", sourceKey: 'id', as: 'companyRoleData'});
+    db.user.hasOne(db.subscription, { foreignKey: 'userId', as: 'subscription'});
 
     db.user.addScope('companyRoleData',{
         include : {
@@ -72,6 +73,10 @@ exports.userModel = (db) => {
         },
         required: true
     })
+}
+
+exports.subscriptionModel = (db) => {
+    db.subscription.belongsTo(db.user, { foreignKey: 'userId', as: 'user' });
 }
 
 exports.chatModel = (db) => {
@@ -467,7 +472,7 @@ exports.professionalProfileModel = (db) => {
     db.professionalProfile.addScope('services', {
         include: {
             model: db.professionalServices,
-            attributes: ['id', 'serviceName', 'price', 'currency', 'isActive'],
+            attributes: ['id', 'serviceName', 'price',  'isActive'],
             as: 'services',
             required: false
         }
@@ -579,7 +584,7 @@ exports.professionalBookingsModel = (db) => {
     db.professionalBookings.addScope('professional', {
         include: {
             model: db.professionalProfile,
-            attributes: ['id', 'title', 'location', 'hourlyRate', 'currency'],
+            attributes: ['id', 'location',],
             as: 'professional',
             include: {
                 model: db.user,
@@ -602,7 +607,7 @@ exports.professionalBookingsModel = (db) => {
     db.professionalBookings.addScope('service', {
         include: {
             model: db.professionalServices,
-            attributes: ['id', 'serviceName', 'serviceType', 'price', 'currency', 'duration'],
+            attributes: ['id', 'serviceName', 'price', 'currency'],
             as: 'service',
             required: true
         }
