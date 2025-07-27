@@ -8,6 +8,7 @@ const {
     Op
 } = require('../models');
 const ProfessionalMetricsService = require('../services/professionalMetrics.service');
+const { geocodeLocation, calculateDistance } = require('../services/geocoding.service');
 const createError = require('http-errors');
 
 /**
@@ -240,7 +241,12 @@ const searchProfessionals = async (data) => {
         page = 1,
         limit = 10,
         sortBy = 'rating',
-        sortOrder = 'DESC'
+        sortOrder = 'DESC',
+        // New parameters for geolocation
+        userLat,
+        userLng,
+        radius = 50, // Default radius in kilometers
+        nearMe = false
     } = data;
 
     try {
@@ -308,25 +314,69 @@ const searchProfessionals = async (data) => {
             distinct: true
         });
 
-        // Remove internal tracking fields from search results
-        const cleanedProfiles = rows.map(profile => ({
-            ...profile.toJSON(),
-            totalMessages: undefined,
-            totalMessageResponseTime: undefined,
-            lastResponseTime: undefined,
-            averageResponseTime: undefined,
-            levelCalculatedAt: undefined,
-            responseTimeCalculatedAt: undefined
-        }));
+        // Remove internal tracking fields from search results and add geocoding
+        const professionalPromises = rows.map(async (profile) => {
+            const profileData = {
+                ...profile.toJSON(),
+                totalMessages: undefined,
+                totalMessageResponseTime: undefined,
+                lastResponseTime: undefined,
+                averageResponseTime: undefined,
+                levelCalculatedAt: undefined,
+                responseTimeCalculatedAt: undefined
+            };
+
+            // Geocode location if available
+            let coordinates = null;
+            let distance = null;
+
+            if (profileData.location) {
+                coordinates = await geocodeLocation(profileData.location);
+            }
+
+            // Calculate distance if user coordinates provided
+            if (coordinates && userLat && userLng) {
+                distance = calculateDistance(userLat, userLng, coordinates.lat, coordinates.lng);
+            }
+
+            return {
+                ...profileData,
+                coordinates,
+                distance
+            };
+        });
+
+        let cleanedProfiles = await Promise.all(professionalPromises);
+
+        // Filter by radius if nearMe search and coordinates available
+        if (nearMe && userLat && userLng) {
+            cleanedProfiles = cleanedProfiles.filter(profile => 
+                profile.distance !== null && profile.distance <= radius
+            );
+        }
+
+        // Sort by distance if nearMe search, otherwise use original sorting
+        if (nearMe && userLat && userLng) {
+            cleanedProfiles.sort((a, b) => {
+                if (a.distance === null) return 1;
+                if (b.distance === null) return -1;
+                return a.distance - b.distance;
+            });
+        }
 
         return {
             data: {
                 professionals: cleanedProfiles,
                 pagination: {
                     currentPage: parseInt(page),
-                    totalPages: Math.ceil(count / limit),
-                    totalItems: count,
+                    totalPages: nearMe ? Math.ceil(cleanedProfiles.length / limit) : Math.ceil(count / limit),
+                    totalItems: nearMe ? cleanedProfiles.length : count,
                     itemsPerPage: parseInt(limit)
+                },
+                searchInfo: {
+                    nearMe,
+                    userLocation: userLat && userLng ? { lat: userLat, lng: userLng } : null,
+                    radius: nearMe ? radius : null
                 }
             },
             message: 'Professionals retrieved successfully'
