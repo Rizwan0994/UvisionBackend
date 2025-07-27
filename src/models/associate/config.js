@@ -15,6 +15,7 @@ exports.userModel = (db) => {
     db.user.hasOne(db.professionalProfile, { foreignKey: "userId", as: 'professionalProfile'});
     db.user.belongsTo(db.roles, {foreignKey: "role", sourceKey: 'id', as: 'roleData'});
     db.user.belongsTo(db.companyRole, {foreignKey: "companyRoleId", sourceKey: 'id', as: 'companyRoleData'});
+    db.user.hasOne(db.subscription, { foreignKey: 'userId', as: 'subscription'});
 
     db.user.addScope('companyRoleData',{
         include : {
@@ -72,6 +73,10 @@ exports.userModel = (db) => {
         },
         required: true
     })
+}
+
+exports.subscriptionModel = (db) => {
+    db.subscription.belongsTo(db.user, { foreignKey: 'userId', as: 'user' });
 }
 
 exports.chatModel = (db) => {
