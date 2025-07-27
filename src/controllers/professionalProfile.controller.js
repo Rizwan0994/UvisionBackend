@@ -3,6 +3,8 @@ const {
     user: UserModel,
     category: CategoryModel,
     professionalCategory: ProfessionalCategoryModel,
+    professionalPortfolio: ProfessionalPortfolioModel,
+    professionalServices: ProfessionalServicesModel,
     Op
 } = require('../models');
 const ProfessionalMetricsService = require('../services/professionalMetrics.service');
@@ -177,6 +179,20 @@ const getProfile = async (professionalId) => {
                     as: 'categories',
                     attributes: ['id', 'name', 'slug', 'icon', 'color'],
                     through: { attributes: ['isPrimary'] }
+                },
+                {
+                //PORTFOLIO
+                    model: ProfessionalPortfolioModel,
+                     as: 'portfolio',
+                    attributes: ['id', 'mediaUrl', 'createdAt'],
+                    required: false 
+
+                },
+                {
+                    model: ProfessionalServicesModel,
+                    as: 'services',
+                    attributes: ['id', 'serviceName', 'price','currency'],
+                    required: false
                 }
             ]
         });
