@@ -112,6 +112,24 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'Array of equipments professional'   
         },
+        
+        // Payment Management - Stripe Connect Integration
+        stripeConnectAccountId: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment: 'Stripe Express account ID for receiving payments'
+        },
+        paymentAccountStatus: {
+            type: DataTypes.ENUM(['none', 'pending', 'active', 'restricted']),
+            defaultValue: 'none',
+            comment: 'Payment account status'
+        },
+        paymentAccountEmail: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment: 'Email associated with payment account'
+        },
+        
         // System-calculated metrics for automatic level and response time calculation
         totalMessages: {
             type: DataTypes.INTEGER,

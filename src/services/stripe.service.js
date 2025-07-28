@@ -113,11 +113,110 @@ const cancelSubscription = async (subscriptionId) => {
   }
 };
 
+/**
+ * Stripe Connect - Payment Management Functions
+ */
+
+/**
+ * Create Stripe Express Account
+ */
+const createExpressAccount = async (email, country = 'US') => {
+  try {
+    const account = await stripe.accounts.create({
+      type: 'express',
+      country: country,
+      email: email,
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+    });
+
+    return account;
+  } catch (error) {
+    console.error('Error creating Express account:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generate Account Link for Onboarding
+ */
+const generateAccountLink = async (accountId, refreshUrl, returnUrl) => {
+  try {
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
+      type: 'account_onboarding',
+    });
+
+    return accountLink;
+  } catch (error) {
+    console.error('Error generating account link:', error);
+    throw error;
+  }
+};
+
+/**
+ * Retrieve Account Status
+ */
+const retrieveAccountStatus = async (accountId) => {
+  try {
+    const account = await stripe.accounts.retrieve(accountId);
+    
+    return {
+      id: account.id,
+      email: account.email,
+      charges_enabled: account.charges_enabled,
+      payouts_enabled: account.payouts_enabled,
+      details_submitted: account.details_submitted,
+      requirements: account.requirements,
+      business_profile: account.business_profile,
+    };
+  } catch (error) {
+    console.error('Error retrieving account status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Create Dashboard Link
+ */
+const createDashboardLink = async (accountId) => {
+  try {
+    const link = await stripe.accounts.createLoginLink(accountId);
+    return link;
+  } catch (error) {
+    console.error('Error creating dashboard link:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete Express Account
+ */
+const deleteExpressAccount = async (accountId) => {
+  try {
+    const deletedAccount = await stripe.accounts.del(accountId);
+    return deletedAccount;
+  } catch (error) {
+    console.error('Error deleting Express account:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   createCheckoutSession,
   getCustomerByEmail,
   createCustomer,
   getSubscription,
   cancelSubscription,
+  // Stripe Connect functions
+  createExpressAccount,
+  generateAccountLink,
+  retrieveAccountStatus,
+  createDashboardLink,
+  deleteExpressAccount,
   SUBSCRIPTION_PLANS
 };
