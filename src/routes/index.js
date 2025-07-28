@@ -30,6 +30,9 @@ router.use('/categories', require("./categories.routes"));
 // Public professional routes (search and profiles)
 router.use('/professional', require("./professionalSearch.routes"));
 
+// Contact routes (public)
+router.use('/contact', require("./contact.routes"));
+
 // Upload routes (has both public and protected endpoints)
 router.use('/upload', require("./upload.routes"));
 

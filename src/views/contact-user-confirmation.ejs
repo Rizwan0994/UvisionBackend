@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You for Contacting uVision</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #0a1836 0%, #1e40af 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            margin: 0;
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .welcome-message {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        .welcome-title {
+            color: #1e293b;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+        }
+        .welcome-text {
+            color: #64748b;
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0;
+        }
+        .message-summary {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 4px solid #1e40af;
+        }
+        .summary-title {
+            color: #1e293b;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+        }
+        .summary-row {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: flex-start;
+        }
+        .summary-row:last-child {
+            margin-bottom: 0;
+        }
+        .summary-label {
+            font-weight: 600;
+            color: #475569;
+            min-width: 100px;
+            font-size: 14px;
+        }
+        .summary-value {
+            color: #1e293b;
+            flex: 1;
+            font-size: 14px;
+        }
+        .next-steps {
+            background-color: #dbeafe;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        .next-steps h3 {
+            color: #1e40af;
+            margin: 0 0 15px 0;
+            font-size: 18px;
+        }
+        .next-steps ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #1e40af;
+        }
+        .next-steps li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .contact-info {
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .contact-info h4 {
+            color: #1e293b;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .contact-info p {
+            color: #64748b;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .footer {
+            background-color: #0a1836;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .footer h3 {
+            margin: 0 0 15px 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .footer p {
+            margin: 5px 0;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+        .social-links {
+            margin-top: 20px;
+        }
+        .social-links a {
+            color: #60a5fa;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+        .timestamp {
+            background-color: #1e40af;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            font-weight: 500;
+        }
+        .check-icon {
+            color: #10b981;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>uVision</h1>
+            <p>Your Vision, Our Expertise</p>
+        </div>
+        
+        <div class="content">
+            <div class="welcome-message">
+                <div class="check-icon">✓</div>
+                <h2 class="welcome-title">Thank You, <%= fullName %>!</h2>
+                <p class="welcome-text">
+                    We've successfully received your message and our team will review it carefully. 
+                    We appreciate you taking the time to reach out to us.
+                </p>
+            </div>
+
+            <div class="message-summary">
+                <h3 class="summary-title">Message Summary</h3>
+                <div class="summary-row">
+                    <span class="summary-label">Subject:</span>
+                    <span class="summary-value"><strong><%= subject %></strong></span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Submitted:</span>
+                    <span class="summary-value"><span class="timestamp"><%= submittedAt %></span></span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Contact:</span>
+                    <span class="summary-value"><%= email %></span>
+                </div>
+            </div>
+
+            <div class="next-steps">
+                <h3>What Happens Next?</h3>
+                <ul>
+                    <li><strong>Review:</strong> Our team will carefully review your message within 24 hours</li>
+                    <li><strong>Response:</strong> We'll get back to you via email with a detailed response</li>
+                    <li><strong>Follow-up:</strong> If needed, we may reach out for additional information</li>
+                    <li><strong>Resolution:</strong> We're committed to providing you with the best possible assistance</li>
+                </ul>
+            </div>
+
+            <div class="contact-info">
+                <h4>Need Immediate Assistance?</h4>
+                <p>For urgent matters, you can also reach us at:</p>
+                <p><strong>Email:</strong> support@uvision.com</p>
+                <p><strong>Business Hours:</strong> Monday - Friday, 9:00 AM - 6:00 PM EST</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <h3>uVision</h3>
+            <p>Connecting you with professional services that bring your vision to life.</p>
+            <p>&copy; <%= new Date().getFullYear() %> uVision. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#">Facebook</a>
+                <a href="#">Instagram</a>
+                <a href="#">LinkedIn</a>
+                <a href="#">Twitter</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
