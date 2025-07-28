@@ -165,7 +165,7 @@ const getProfile = async (professionalId) => {
     try {
         const profile = await ProfessionalProfileModel.findOne({
             where: { 
-                userId: professionalId,
+                id: professionalId,
                 isActive: true,
                 isDeleted: false
             },
@@ -179,7 +179,8 @@ const getProfile = async (professionalId) => {
                     model: CategoryModel,
                     as: 'categories',
                     attributes: ['id', 'name', 'slug', 'icon', 'color'],
-                    through: { attributes: ['isPrimary'] }
+                    through: { attributes: ['isPrimary'] },
+                    required: false
                 },
                 {
                 //PORTFOLIO
