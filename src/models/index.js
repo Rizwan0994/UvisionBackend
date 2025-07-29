@@ -86,6 +86,7 @@ db.professionalReviews = require('./professionalReviews.model')(sequelize);
 db.professionalBookings = require('./professionalBookings.model')(sequelize);
 db.professionalAvailability = require('./professionalAvailability.model')(sequelize);
 db.professionalCategory = require('./professionalCategory.model')(sequelize);
+db.bookingPayments = require('./bookingPayment.model')(sequelize);
 db.subscription = require('./subscription.model')(sequelize);
 
 

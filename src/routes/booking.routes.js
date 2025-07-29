@@ -8,7 +8,12 @@ const {
     getMyBookings, 
     getBookingDetails, 
     cancelBooking,
-    getAvailableSlots
+    getAvailableSlots,
+    // New payment functions
+    processUpfrontPayment,
+    confirmUpfrontPayment,
+    processRemainingPayment,
+    getBookingPayments
 } = require('../controllers/professionalBookings.controller');
 const { jwtValidation } = require('../middleware/authentication');
 const catchAsync = require("../util/catchAsync").catchAsync;
@@ -58,6 +63,32 @@ router.post('/create', jwtValidation, catchAsync(async function _createBooking(r
 // Get available time slots for a professional on a specific date
 .get('/availability/:professionalId/:date', catchAsync(async function _getAvailableSlots(req, res) {
     let data = await getAvailableSlots(req.params.professionalId, req.params.date);
+    res.success(data);
+}))
+
+// ================ NEW PAYMENT ROUTES ================
+
+// Process upfront payment (30%) for booking
+.post('/:bookingId/payment/upfront', jwtValidation, catchAsync(async function _processUpfrontPayment(req, res) {
+    let data = await processUpfrontPayment({ ...req.body, bookingId: req.params.bookingId }, req.loginUser);
+    res.success(data);
+}))
+
+// Confirm upfront payment after payment method confirmation
+.post('/payment/confirm-upfront', jwtValidation, catchAsync(async function _confirmUpfrontPayment(req, res) {
+    let data = await confirmUpfrontPayment(req.body, req.loginUser);
+    res.success(data);
+}))
+
+// Process remaining payment (70%) with confirmation code
+.post('/:bookingId/payment/remaining', jwtValidation, catchAsync(async function _processRemainingPayment(req, res) {
+    let data = await processRemainingPayment({ ...req.body, bookingId: req.params.bookingId }, req.loginUser);
+    res.success(data);
+}))
+
+// Get booking payment details
+.get('/:bookingId/payments', jwtValidation, catchAsync(async function _getBookingPayments(req, res) {
+    let data = await getBookingPayments(req.params.bookingId, req.loginUser);
     res.success(data);
 }));
 

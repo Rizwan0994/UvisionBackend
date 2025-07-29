@@ -206,6 +206,318 @@ const deleteExpressAccount = async (accountId) => {
   }
 };
 
+/**
+ * Booking Payment Functions - Production Ready
+ */
+
+/**
+ * Calculate booking payment amounts
+ */
+const calculateBookingAmounts = (totalAmount) => {
+  const total = parseFloat(totalAmount);
+  const upfrontAmount = total * 0.30; // 30% upfront
+  const remainingAmount = total * 0.70; // 70% remaining
+  const platformFee = total * 0.10; // 10% platform fee
+  const professionalTotal = total - platformFee; // 90% to professional
+  const professionalUpfront = upfrontAmount - (platformFee * 0.30); // Professional's share of upfront
+  const professionalRemaining = remainingAmount - (platformFee * 0.70); // Professional's share of remaining
+
+  return {
+    totalAmount: total,
+    upfrontAmount: parseFloat(upfrontAmount.toFixed(2)),
+    remainingAmount: parseFloat(remainingAmount.toFixed(2)),
+    platformFee: parseFloat(platformFee.toFixed(2)),
+    professionalTotal: parseFloat(professionalTotal.toFixed(2)),
+    professionalUpfront: parseFloat(professionalUpfront.toFixed(2)),
+    professionalRemaining: parseFloat(professionalRemaining.toFixed(2))
+  };
+};
+
+/**
+ * Create Payment Intent for booking upfront payment (30%)
+ */
+const createBookingPaymentIntent = async (bookingData, clientEmail) => {
+  try {
+    const { totalAmount, professionalStripeAccountId, bookingId, clientId } = bookingData;
+    const amounts = calculateBookingAmounts(totalAmount);
+
+    // Find or create customer
+    let customer = await getCustomerByEmail(clientEmail);
+    if (!customer) {
+      customer = await createCustomer(clientEmail, clientEmail.split('@')[0]);
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amounts.upfrontAmount * 100), // Convert to cents
+      currency: 'eur',
+      customer: customer.id,
+      payment_method_types: ['card'],
+      capture_method: 'manual', // Manual capture for better control
+      application_fee_amount: Math.round(amounts.platformFee * 0.30 * 100), // 30% of platform fee
+      transfer_data: {
+        destination: professionalStripeAccountId,
+      },
+      metadata: {
+        type: 'booking_upfront',
+        booking_id: bookingId.toString(),
+        client_id: clientId.toString(),
+        professional_account_id: professionalStripeAccountId,
+        total_amount: totalAmount.toString(),
+        upfront_amount: amounts.upfrontAmount.toString(),
+        platform_fee: amounts.platformFee.toString()
+      },
+      description: `Booking upfront payment - 30% of €${totalAmount}`
+    });
+
+    return {
+      paymentIntent,
+      amounts
+    };
+  } catch (error) {
+    console.error('Error creating booking payment intent:', error);
+    throw error;
+  }
+};
+
+/**
+ * Create Payment Intent for remaining payment (70%) - held for later capture
+ */
+const createRemainingPaymentIntent = async (bookingData, clientEmail, paymentMethodId) => {
+  try {
+    const { totalAmount, professionalStripeAccountId, bookingId, clientId } = bookingData;
+    const amounts = calculateBookingAmounts(totalAmount);
+
+    // Find or create customer
+    let customer = await getCustomerByEmail(clientEmail);
+    if (!customer) {
+      customer = await createCustomer(clientEmail, clientEmail.split('@')[0]);
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amounts.remainingAmount * 100), // Convert to cents
+      currency: 'eur',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirmation_method: 'manual',
+      capture_method: 'manual',
+      application_fee_amount: Math.round(amounts.platformFee * 0.70 * 100), // 70% of platform fee
+      transfer_data: {
+        destination: professionalStripeAccountId,
+      },
+      metadata: {
+        type: 'booking_remaining',
+        booking_id: bookingId.toString(),
+        client_id: clientId.toString(),
+        professional_account_id: professionalStripeAccountId,
+        total_amount: totalAmount.toString(),
+        remaining_amount: amounts.remainingAmount.toString(),
+        platform_fee_remaining: (amounts.platformFee * 0.70).toString()
+      },
+      description: `Booking remaining payment - 70% of €${totalAmount}`
+    });
+
+    return {
+      paymentIntent,
+      amounts
+    };
+  } catch (error) {
+    console.error('Error creating remaining payment intent:', error);
+    throw error;
+  }
+};
+
+/**
+ * Confirm and capture upfront payment - handles all PaymentIntent statuses
+ */
+const confirmAndCaptureUpfrontPayment = async (paymentIntentId) => {
+  try {
+    // First, retrieve the current status of the payment intent
+    let paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    console.log(`PaymentIntent ${paymentIntentId} current status: ${paymentIntent.status}`);
+    
+    // Handle different payment intent statuses
+    switch (paymentIntent.status) {
+      case 'requires_confirmation':
+        // Payment method attached, needs confirmation
+        console.log('Confirming PaymentIntent...');
+        paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId);
+        
+        // After confirmation, check if it needs capture
+        if (paymentIntent.status === 'requires_capture') {
+          console.log('Capturing PaymentIntent after confirmation...');
+          paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+        }
+        break;
+        
+      case 'requires_capture':
+        // Payment method already confirmed, just needs capture
+        console.log('Capturing PaymentIntent...');
+        paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+        break;
+        
+      case 'requires_action':
+        // Client needs to complete additional authentication (3D Secure, etc.)
+        console.log('PaymentIntent requires additional client action');
+        return {
+          status: paymentIntent.status,
+          client_secret: paymentIntent.client_secret,
+          next_action: paymentIntent.next_action,
+          message: 'Additional authentication required. Please complete the payment on the frontend.'
+        };
+        
+      case 'requires_payment_method':
+        // No payment method attached yet
+        throw new Error('PaymentIntent requires a payment method. Please attach a payment method first.');
+        
+      case 'succeeded':
+        // Already processed successfully
+        console.log('PaymentIntent already succeeded');
+        break;
+        
+      case 'canceled':
+        throw new Error('PaymentIntent has been canceled and cannot be processed.');
+        
+      case 'processing':
+        // Payment is being processed
+        console.log('PaymentIntent is currently processing...');
+        break;
+        
+      default:
+        throw new Error(`Unexpected PaymentIntent status: ${paymentIntent.status}`);
+    }
+    
+    return paymentIntent;
+  } catch (error) {
+    console.error('Error confirming and capturing upfront payment:', error);
+    
+    // Provide more specific error messages
+    if (error.code === 'payment_intent_unexpected_state') {
+      throw new Error(`Payment cannot be processed due to its current state: ${error.payment_intent?.status || 'unknown'}`);
+    }
+    
+    throw error;
+  }
+};
+
+/**
+ * Capture remaining payment when confirmation code is verified - handles all PaymentIntent statuses
+ */
+const captureRemainingPayment = async (paymentIntentId) => {
+  try {
+    // First, retrieve the current status of the payment intent
+    let paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    console.log(`Remaining PaymentIntent ${paymentIntentId} current status: ${paymentIntent.status}`);
+    
+    // Handle different payment intent statuses
+    switch (paymentIntent.status) {
+      case 'requires_confirmation':
+        // Payment method attached, needs confirmation
+        console.log('Confirming remaining PaymentIntent...');
+        paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId);
+        
+        // After confirmation, check if it needs capture
+        if (paymentIntent.status === 'requires_capture') {
+          console.log('Capturing remaining PaymentIntent after confirmation...');
+          paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+        }
+        break;
+        
+      case 'requires_capture':
+        // Payment method already confirmed, just needs capture
+        console.log('Capturing remaining PaymentIntent...');
+        paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+        break;
+        
+      case 'requires_action':
+        // Client needs to complete additional authentication
+        console.log('Remaining PaymentIntent requires additional client action');
+        return {
+          status: paymentIntent.status,
+          client_secret: paymentIntent.client_secret,
+          next_action: paymentIntent.next_action,
+          message: 'Additional authentication required for remaining payment.'
+        };
+        
+      case 'requires_payment_method':
+        throw new Error('Remaining PaymentIntent requires a payment method. Please attach a payment method first.');
+        
+      case 'succeeded':
+        // Already processed successfully
+        console.log('Remaining PaymentIntent already succeeded');
+        break;
+        
+      case 'canceled':
+        throw new Error('Remaining PaymentIntent has been canceled and cannot be processed.');
+        
+      case 'processing':
+        // Payment is being processed
+        console.log('Remaining PaymentIntent is currently processing...');
+        break;
+        
+      default:
+        throw new Error(`Unexpected remaining PaymentIntent status: ${paymentIntent.status}`);
+    }
+    
+    return paymentIntent;
+  } catch (error) {
+    console.error('Error capturing remaining payment:', error);
+    
+    // Provide more specific error messages
+    if (error.code === 'payment_intent_unexpected_state') {
+      throw new Error(`Remaining payment cannot be processed due to its current state: ${error.payment_intent?.status || 'unknown'}`);
+    }
+    
+    throw error;
+  }
+};
+
+/**
+ * Cancel payment intent (for cancellations before capture)
+ */
+const cancelPaymentIntent = async (paymentIntentId) => {
+  try {
+    const cancelledIntent = await stripe.paymentIntents.cancel(paymentIntentId);
+    return cancelledIntent;
+  } catch (error) {
+    console.error('Error cancelling payment intent:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get payment intent details
+ */
+const getPaymentIntentDetails = async (paymentIntentId) => {
+  try {
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    return paymentIntent;
+  } catch (error) {
+    console.error('Error retrieving payment intent:', error);
+    throw error;
+  }
+};
+
+/**
+ * Process refund for booking payment
+ */
+const processBookingRefund = async (paymentIntentId, refundAmount, reason = 'requested_by_customer') => {
+  try {
+    const refund = await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      amount: Math.round(refundAmount * 100), // Convert to cents
+      reason: reason,
+      metadata: {
+        refund_type: 'booking_cancellation'
+      }
+    });
+    
+    return refund;
+  } catch (error) {
+    console.error('Error processing booking refund:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   createCheckoutSession,
   getCustomerByEmail,
@@ -218,5 +530,14 @@ module.exports = {
   retrieveAccountStatus,
   createDashboardLink,
   deleteExpressAccount,
+  // Booking Payment functions
+  calculateBookingAmounts,
+  createBookingPaymentIntent,
+  createRemainingPaymentIntent,
+  confirmAndCaptureUpfrontPayment,
+  captureRemainingPayment,
+  cancelPaymentIntent,
+  getPaymentIntentDetails,
+  processBookingRefund,
   SUBSCRIPTION_PLANS
 };

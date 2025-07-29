@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed - uVision</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .booking-details {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .payment-info {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #4caf50;
+        }
+        .next-steps {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #ffc107;
+        }
+        .confirmation-code {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #2196f3;
+            text-align: center;
+        }
+        .code {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1976d2;
+            letter-spacing: 3px;
+            margin: 10px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+        }
+        .button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎉 Booking Confirmed!</h1>
+        <p>Thank you for choosing uVision</p>
+    </div>
+    
+    <div class="content">
+        <h2>Hello <%= clientName %>,</h2>
+        <p>Great news! Your booking has been confirmed and your upfront payment has been successfully processed.</p>
+        
+        <div class="booking-details">
+            <h3>📋 Booking Details</h3>
+            <p><strong>Booking Number:</strong> <%= bookingNumber %></p>
+            <p><strong>Professional:</strong> <%= professionalName %></p>
+            <p><strong>Service:</strong> <%= serviceName %></p>
+            <p><strong>Date:</strong> <%= eventDate %></p>
+            <p><strong>Time:</strong> <%= eventTime %></p>
+            <p><strong>Location:</strong> <%= location %></p>
+            <% if (specialRequests) { %>
+            <p><strong>Special Requests:</strong> <%= specialRequests %></p>
+            <% } %>
+        </div>
+        
+        <div class="payment-info">
+            <h3>💳 Payment Information</h3>
+            <p><strong>Total Booking Amount:</strong> €<%= totalAmount %></p>
+            <p><strong>Upfront Payment (30%):</strong> €<%= upfrontAmount %> ✅ <em>Paid</em></p>
+            <p><strong>Remaining Amount (70%):</strong> €<%= remainingAmount %> <em>Due after service completion</em></p>
+            <p><strong>Platform Fee:</strong> €<%= platformFee %> (10% of total)</p>
+        </div>
+        
+        <div class="confirmation-code">
+            <h3>🔐 Your Confirmation Code</h3>
+            <p>Use this code to complete final payment after service completion:</p>
+            <div class="code"><%= confirmationCode %></div>
+            <p><small>Keep this code safe - you'll need it to complete the final 70% payment</small></p>
+        </div>
+        
+        <div class="next-steps">
+            <h3>📌 What's Next?</h3>
+            <ol>
+                <li><strong>Professional Contact:</strong> <%= professionalName %> will contact you soon to confirm details</li>
+                <li><strong>Attend Session:</strong> Be present at the scheduled date and time</li>
+                <li><strong>Service Completion:</strong> After the service is completed, use your confirmation code</li>
+                <li><strong>Final Payment:</strong> Complete the remaining 70% payment using the confirmation code above</li>
+            </ol>
+        </div>
+        
+        <p>If you have any questions or need to make changes to your booking, please don't hesitate to contact us.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="<%= frontendUrl %>/bookings" class="button">View My Bookings</a>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p><strong>uVision</strong> - Connecting You with Creative Professionals</p>
+        <p>📧 support@uvision.com | 📞 +1 (555) 123-4567</p>
+        <p><small>This is an automated email. Please do not reply to this email address.</small></p>
+    </div>
+</body>
+</html>
