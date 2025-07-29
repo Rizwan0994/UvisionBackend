@@ -6,6 +6,7 @@ const {
     processPayment, 
     confirmBooking, 
     getMyBookings, 
+    getProfessionalBookings,
     getBookingDetails, 
     cancelBooking,
     getAvailableSlots,
@@ -21,7 +22,7 @@ const catchAsync = require("../util/catchAsync").catchAsync;
 // Create new booking (Step 1 - Service Selection)
 router.post('/create', jwtValidation, catchAsync(async function _createBooking(req, res) {
     let data = await createBooking(req.body, req.loginUser);
-    return res.success({ data });
+    res.success(data);
 }))
 
 // Update booking details (Step 2 - Event Details)
@@ -45,6 +46,12 @@ router.post('/create', jwtValidation, catchAsync(async function _createBooking(r
 // Get client's bookings
 .get('/me', jwtValidation, catchAsync(async function _getMyBookings(req, res) {
     let data = await getMyBookings(req.loginUser);
+    res.success(data);
+}))
+
+// Get professional's bookings
+.get('/professional', jwtValidation, catchAsync(async function _getProfessionalBookings(req, res) {
+    let data = await getProfessionalBookings(req.loginUser);
     res.success(data);
 }))
 
@@ -82,7 +89,7 @@ router.post('/create', jwtValidation, catchAsync(async function _createBooking(r
 
 // Process remaining payment (70%) with confirmation code
 .post('/:bookingId/payment/remaining', jwtValidation, catchAsync(async function _processRemainingPayment(req, res) {
-    let data = await processRemainingPayment({ ...req.body, bookingId: req.params.bookingId }, req.loginUser);
+    let data = await processRemainingPayment(req.body, req.params.bookingId );
     res.success(data);
 }))
 

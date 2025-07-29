@@ -282,7 +282,7 @@ const createBookingPaymentIntent = async (bookingData, clientEmail) => {
 /**
  * Create Payment Intent for remaining payment (70%) - held for later capture
  */
-const createRemainingPaymentIntent = async (bookingData, clientEmail, paymentMethodId) => {
+const createRemainingPaymentIntent = async (bookingData, clientEmail, originalPaymentMethodId) => {
   try {
     const { totalAmount, professionalStripeAccountId, bookingId, clientId } = bookingData;
     const amounts = calculateBookingAmounts(totalAmount);
@@ -293,11 +293,39 @@ const createRemainingPaymentIntent = async (bookingData, clientEmail, paymentMet
       customer = await createCustomer(clientEmail, clientEmail.split('@')[0]);
     }
 
+    // CRITICAL FIX: Get the customer's attached PaymentMethods instead of reusing the original
+    let paymentMethodToUse = null;
+    
+    try {
+      // First, try to find if the original PaymentMethod is attached to this customer
+      const attachedPaymentMethods = await stripe.paymentMethods.list({
+        customer: customer.id,
+        type: 'card',
+      });
+      
+      // Look for the original payment method in attached methods
+      paymentMethodToUse = attachedPaymentMethods.data.find(pm => pm.id === originalPaymentMethodId);
+      
+      if (!paymentMethodToUse && attachedPaymentMethods.data.length > 0) {
+        // If original not found but other methods exist, use the most recent one
+        paymentMethodToUse = attachedPaymentMethods.data[0];
+        console.log(`Using most recent attached PaymentMethod: ${paymentMethodToUse.id}`);
+      }
+      
+      if (!paymentMethodToUse) {
+        throw new Error('No payment method attached to customer. Customer must complete payment setup first.');
+      }
+      
+    } catch (pmError) {
+      console.error('Error retrieving customer payment methods:', pmError);
+      throw new Error('Unable to retrieve payment method for remaining payment. Please contact support.');
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amounts.remainingAmount * 100), // Convert to cents
       currency: 'eur',
       customer: customer.id,
-      payment_method: paymentMethodId,
+      payment_method: paymentMethodToUse.id,
       confirmation_method: 'manual',
       capture_method: 'manual',
       application_fee_amount: Math.round(amounts.platformFee * 0.70 * 100), // 70% of platform fee
@@ -311,7 +339,8 @@ const createRemainingPaymentIntent = async (bookingData, clientEmail, paymentMet
         professional_account_id: professionalStripeAccountId,
         total_amount: totalAmount.toString(),
         remaining_amount: amounts.remainingAmount.toString(),
-        platform_fee_remaining: (amounts.platformFee * 0.70).toString()
+        platform_fee_remaining: (amounts.platformFee * 0.70).toString(),
+        original_payment_method_id: originalPaymentMethodId
       },
       description: `Booking remaining payment - 70% of €${totalAmount}`
     });
@@ -384,6 +413,20 @@ const confirmAndCaptureUpfrontPayment = async (paymentIntentId) => {
         
       default:
         throw new Error(`Unexpected PaymentIntent status: ${paymentIntent.status}`);
+    }
+    
+    // CRITICAL FIX: If payment succeeded, attach PaymentMethod to Customer for future use
+    if (paymentIntent.status === 'succeeded' && paymentIntent.payment_method && paymentIntent.customer) {
+      try {
+        console.log('Attaching PaymentMethod to Customer for future payments...');
+        await stripe.paymentMethods.attach(paymentIntent.payment_method, {
+          customer: paymentIntent.customer,
+        });
+        console.log(`PaymentMethod ${paymentIntent.payment_method} attached to Customer ${paymentIntent.customer}`);
+      } catch (attachError) {
+        // Don't fail the payment if attachment fails, just log it
+        console.error('Warning: Could not attach PaymentMethod to Customer:', attachError.message);
+      }
     }
     
     return paymentIntent;
@@ -485,6 +528,32 @@ const cancelPaymentIntent = async (paymentIntentId) => {
 };
 
 /**
+ * Ensure PaymentMethod is attached to Customer (helper function)
+ */
+const ensurePaymentMethodAttached = async (paymentMethodId, customerId) => {
+  try {
+    // Check if PaymentMethod is already attached to this customer
+    const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+    
+    if (paymentMethod.customer === customerId) {
+      console.log(`PaymentMethod ${paymentMethodId} already attached to Customer ${customerId}`);
+      return true;
+    }
+    
+    // Attach the PaymentMethod to the Customer
+    await stripe.paymentMethods.attach(paymentMethodId, {
+      customer: customerId,
+    });
+    
+    console.log(`Successfully attached PaymentMethod ${paymentMethodId} to Customer ${customerId}`);
+    return true;
+  } catch (error) {
+    console.error('Error attaching PaymentMethod to Customer:', error);
+    throw new Error(`Failed to attach payment method: ${error.message}`);
+  }
+};
+
+/**
  * Get payment intent details
  */
 const getPaymentIntentDetails = async (paymentIntentId) => {
@@ -538,6 +607,7 @@ module.exports = {
   captureRemainingPayment,
   cancelPaymentIntent,
   getPaymentIntentDetails,
+  ensurePaymentMethodAttached,
   processBookingRefund,
   SUBSCRIPTION_PLANS
 };

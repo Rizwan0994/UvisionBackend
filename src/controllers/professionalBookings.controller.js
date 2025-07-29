@@ -89,18 +89,20 @@ exports.createBooking = async (data, loginUser) => {
         const booking = await ProfessionalBookingsModel.create(bookingData);
         
         return { 
-            message: "Booking created successfully. Please complete the details.", 
-            booking: {
-                id: booking.id,
-                bookingNumber: booking.bookingNumber,
-                confirmationCode: booking.confirmationCode,
-                professional: professional,
-                service: service,
-                eventDate: booking.eventDate,
-                totalAmount: booking.totalAmount,
-                currency: booking.currency,
-                status: booking.status
-            }
+            data: {
+                booking: {
+                    id: booking.id,
+                    bookingNumber: booking.bookingNumber,
+                    confirmationCode: booking.confirmationCode,
+                    professional: professional,
+                    service: service,
+                    eventDate: booking.eventDate,
+                    totalAmount: booking.totalAmount,
+                    currency: booking.currency,
+                    status: booking.status
+                }
+            },
+            message: "Booking created successfully. Please complete the details."
         };
     } catch (error) {
         throw error;
@@ -165,8 +167,10 @@ exports.updateBookingDetails = async (bookingId, data, loginUser) => {
         });
 
         return { 
-            message: "Booking details updated successfully.", 
-            booking: updatedBooking 
+            data: {
+                booking: updatedBooking
+            },
+            message: "Booking details updated successfully."
         };
     } catch (error) {
         throw error;
@@ -231,9 +235,11 @@ exports.processPayment = async (bookingId, paymentData, loginUser) => {
         });
 
         return { 
-            message: "Payment processed successfully. Booking confirmed.", 
-            booking: updatedBooking,
-            transactionId: transactionId
+            data: {
+                booking: updatedBooking,
+                transactionId: transactionId
+            },
+            message: "Payment processed successfully. Booking confirmed."
         };
     } catch (error) {
         throw error;
@@ -270,9 +276,11 @@ exports.confirmBooking = async (bookingId, confirmationCode, loginUser) => {
         // 3. Update professional's availability
 
         return { 
-            message: "Booking confirmed successfully!", 
-            booking: booking,
-            confirmationCode: confirmationCode
+            data: {
+                booking: booking,
+                confirmationCode: confirmationCode
+            },
+            message: "Booking confirmed successfully!"
         };
     } catch (error) {
         throw error;
@@ -288,8 +296,55 @@ exports.getMyBookings = async (loginUser) => {
         });
 
         return { 
-            bookings, 
+            data: {
+                bookings
+            },
             message: "Bookings retrieved successfully." 
+        };
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Get professional's bookings
+exports.getProfessionalBookings = async (loginUser) => {
+    try {
+        // Get professional profile first
+        const professional = await ProfessionalProfileModel.findOne({
+            where: { userId: loginUser.id }
+        });
+
+        if (!professional) {
+            throw new createError["NotFound"]("Professional profile not found");
+        }
+
+        const bookings = await ProfessionalBookingsModel.findAll({
+            where: { professionalId: professional.id },
+            include: [
+                {
+                    model: UserModel,
+                    as: 'client',
+                    attributes: ['id', 'fullName', 'lastName', 'email', 'profilePicture']
+                },
+                {
+                    model: ProfessionalServicesModel,
+                    as: 'service',
+                    attributes: ['id', 'serviceName', 'price',]
+                },
+                {
+                    model: ProfessionalProfileModel,
+                    as: 'professional',
+                    attributes: ['id', 'equipments']
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        return { 
+            data: {
+                bookings
+            },
+            message: "Professional bookings retrieved successfully." 
         };
     } catch (error) {
         throw error;
@@ -311,7 +366,9 @@ exports.getBookingDetails = async (bookingId, loginUser) => {
         }
 
         return { 
-            booking, 
+            data: {
+                booking
+            },
             message: "Booking details retrieved successfully." 
         };
     } catch (error) {
@@ -350,6 +407,7 @@ exports.cancelBooking = async (bookingId, reason, loginUser) => {
         // 3. Update professional's availability
 
         return { 
+            data: {},
             message: "Booking cancelled successfully." 
         };
     } catch (error) {
@@ -403,7 +461,9 @@ exports.getAvailableSlots = async (professionalId, date) => {
         });
 
         return { 
-            availableSlots, 
+            data: {
+                availableSlots
+            },
             message: "Available slots retrieved successfully." 
         };
     } catch (error) {
@@ -614,9 +674,9 @@ exports.confirmUpfrontPayment = async (data, loginUser) => {
                     subject: `Booking Confirmed - ${completeBooking.service.serviceName}`,
                     template: '/views/booking-confirmation',
                     data: {
-                        clientName: completeBooking.client.fullName || completeBooking.client.firstName,
+                        clientName: completeBooking.client.fullName ,
                         bookingNumber: completeBooking.bookingNumber,
-                        professionalName: completeBooking.professional.user.fullName || completeBooking.professional.user.firstName,
+                        professionalName: completeBooking.professional.user.fullName,
                         serviceName: completeBooking.service.serviceName,
                         eventDate: completeBooking.eventDate ? new Date(completeBooking.eventDate).toLocaleDateString() : 'TBD',
                         eventTime: completeBooking.startTime || completeBooking.eventTime || 'TBD',
@@ -636,14 +696,16 @@ exports.confirmUpfrontPayment = async (data, loginUser) => {
             }
 
             return {
-                message: "Upfront payment confirmed successfully",
-                booking: {
-                    id: paymentRecord.booking.id,
-                    status: 'confirmed',
-                    confirmationCode: confirmationCode,
-                    paymentStatus: 'partial'
+                data: {
+                    booking: {
+                        id: paymentRecord.booking.id,
+                        status: 'confirmed',
+                        confirmationCode: confirmationCode,
+                        paymentStatus: 'partial'
+                    },
+                    paymentStatus: paymentResult.status
                 },
-                paymentStatus: paymentResult.status
+                message: "Upfront payment confirmed successfully"
             };
         } else {
             throw new createError["BadRequest"](`Payment failed: ${paymentResult.status}`);
@@ -656,9 +718,10 @@ exports.confirmUpfrontPayment = async (data, loginUser) => {
 /**
  * Process remaining payment (70%) when confirmation code is verified
  */
-exports.processRemainingPayment = async (data, loginUser) => {
+exports.processRemainingPayment = async (data, bookingId) => {
     try {
-        const { bookingId, confirmationCode } = data;
+        const {  confirmationCode } = data;
+        console.log("Processing remaining payment for booking:", bookingId, "with confirmation code:", confirmationCode);
 
         // Find booking with confirmation code
         const booking = await ProfessionalBookingsModel.findOne({
@@ -739,16 +802,29 @@ exports.processRemainingPayment = async (data, loginUser) => {
         });
 
         return {
-            message: "Remaining payment processed successfully",
-            booking: {
-                id: booking.id,
-                status: 'completed',
-                paymentStatus: 'paid'
+            data: {
+                booking: {
+                    id: booking.id,
+                    status: 'completed',
+                    paymentStatus: 'paid'
+                },
+                paymentAmount: amounts.remainingAmount,
+                totalPaid: parseFloat(booking.totalAmount)
             },
-            paymentAmount: amounts.remainingAmount,
-            totalPaid: parseFloat(booking.totalAmount)
+            message: "Remaining payment processed successfully"
         };
     } catch (error) {
+        console.error('Error processing remaining payment:', error);
+        
+        // Handle specific Stripe PaymentMethod errors
+        if (error.message && error.message.includes('No payment method attached to customer')) {
+            throw new createError["BadRequest"]("Payment method not available. Please contact the client to complete payment setup first.");
+        }
+        
+        if (error.message && error.message.includes('PaymentMethod was previously used')) {
+            throw new createError["BadRequest"]("Payment method cannot be reused. Please ask the client to provide a new payment method.");
+        }
+        
         // Handle Stripe cross-border payment error specifically
         if (error.message && error.message.includes('Cannot create a destination charge for connected accounts in FR')) {
             throw new createError["BadRequest"]("Payment processing temporarily unavailable for this professional. Please contact support or try again later.");
@@ -756,7 +832,7 @@ exports.processRemainingPayment = async (data, loginUser) => {
         
         // Handle other Stripe errors
         if (error.type === 'StripeError' || error.type === 'StripeInvalidRequestError') {
-            throw new createError["BadRequest"]("Payment processing error. Please check your payment details and try again.");
+            throw new createError["BadRequest"](`Payment processing error: ${error.message}. Please contact support if the issue persists.`);
         }
         
         throw error;
@@ -796,15 +872,17 @@ exports.getBookingPayments = async (bookingId, loginUser) => {
         });
 
         return {
-            booking: {
-                id: booking.id,
-                bookingNumber: booking.bookingNumber,
-                status: booking.status,
-                paymentStatus: booking.paymentStatus,
-                totalAmount: booking.totalAmount,
-                currency: booking.currency
+            data: {
+                booking: {
+                    id: booking.id,
+                    bookingNumber: booking.bookingNumber,
+                    status: booking.status,
+                    paymentStatus: booking.paymentStatus,
+                    totalAmount: booking.totalAmount,
+                    currency: booking.currency
+                },
+                payments: payments
             },
-            payments: payments,
             message: "Payment details retrieved successfully"
         };
     } catch (error) {
