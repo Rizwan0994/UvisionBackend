@@ -61,4 +61,5 @@ router.use('/companyRole', require("./companyRole.routes"));
 router.use('/designationGroup', require("./designationGroup.routes"));
 router.use('/professional-dashboard', require("./professional.routes"));
 router.use('/booking', require("./booking.routes"));
+router.use('/reviews', require("./review.routes"));
 module.exports = router;

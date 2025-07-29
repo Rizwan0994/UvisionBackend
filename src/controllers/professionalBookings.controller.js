@@ -9,6 +9,7 @@ const {
     professionalBookings: ProfessionalBookingsModel,
     professionalAvailability: ProfessionalAvailabilityModel,
     bookingPayments: BookingPaymentsModel,
+    professionalReviews: ProfessionalReviewsModel,
     Op
 } = require("../models/index");
 
@@ -290,8 +291,36 @@ exports.confirmBooking = async (bookingId, confirmationCode, loginUser) => {
 // Get client's bookings
 exports.getMyBookings = async (loginUser) => {
     try {
-        const bookings = await ProfessionalBookingsModel.scope(['professional', 'service']).findAll({
+        const bookings = await ProfessionalBookingsModel.findAll({
             where: { clientId: loginUser.id },
+            include: [
+                {
+                    model: ProfessionalProfileModel,
+                    as: 'professional',
+                    include: [
+                        {
+                            model: UserModel,
+                            as: 'user',
+                            attributes: ['id', 'fullName', 'profilePicture']
+                        }
+                    ]
+                },
+                {
+                    model: ProfessionalServicesModel,
+                    as: 'service',
+                    attributes: ['id', 'serviceName', 'price']
+                },
+                {
+                    model: ProfessionalReviewsModel,
+                    as: 'review',
+                    required: false, // LEFT JOIN - include even if no review
+                    where: {
+                        clientId: loginUser.id,
+                        isDeleted: false
+                    },
+                    attributes: ['id', 'rating', 'comment', 'createdAt']
+                }
+            ],
             order: [['createdAt', 'DESC']]
         });
 
@@ -334,7 +363,7 @@ exports.getProfessionalBookings = async (loginUser) => {
                 {
                     model: ProfessionalProfileModel,
                     as: 'professional',
-                    attributes: ['id', 'equipments']
+                    attributes: ['id', 'equipments','specialization']
                 }
             ],
             order: [['createdAt', 'DESC']]
