@@ -438,6 +438,12 @@ exports.professionalProfileModel = (db) => {
         as: 'bookings'
     });
 
+    // Professional profile has many payment records through bookings
+    db.professionalProfile.hasMany(db.bookingPayments, {
+        foreignKey: 'professionalId',
+        as: 'payments'
+    });
+
     // Professional profile has many availability slots
     db.professionalProfile.hasMany(db.professionalAvailability, {
         foreignKey: 'professionalId',
@@ -580,6 +586,12 @@ exports.professionalBookingsModel = (db) => {
         as: 'review'
     });
 
+    // Booking has many payment records
+    db.professionalBookings.hasMany(db.bookingPayments, {
+        foreignKey: 'bookingId',
+        as: 'payments'
+    });
+
     // Scopes for professional bookings
     db.professionalBookings.addScope('professional', {
         include: {
@@ -622,6 +634,28 @@ exports.professionalBookingsModel = (db) => {
         }
     });
 };
+
+//realtion for booking payments with professional bookings
+exports.bookingPaymentModel = (db) => {
+    // Payment belongs to booking
+    db.bookingPayments.belongsTo(db.professionalBookings, {
+        foreignKey: 'bookingId',
+        as: 'booking'
+    });
+
+    // Payment belongs to client (user)
+    db.bookingPayments.belongsTo(db.user, {
+        foreignKey: 'clientId',
+        as: 'client'
+    });
+
+    // Payment belongs to professional profile
+    db.bookingPayments.belongsTo(db.professionalProfile, {
+        foreignKey: 'professionalId',
+        as: 'professional'
+    });
+}
+
 
 exports.professionalAvailabilityModel = (db) => {
     // Availability belongs to professional profile

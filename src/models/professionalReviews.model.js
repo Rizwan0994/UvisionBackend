@@ -50,11 +50,11 @@ module.exports = (sequelize) => {
             },
             comment: 'Rating from 1.0 to 5.0'
         },
-        title: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            comment: 'Review title'
-        },
+        // title: {
+        //     type: DataTypes.STRING,
+        //     allowNull: true,
+        //     comment: 'Review title'
+        // },
         comment: {
             type: DataTypes.TEXT,
             allowNull: true,

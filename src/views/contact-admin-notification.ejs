@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Contact Form Submission - uVision</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #0a1836 0%, #1e40af 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .alert {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 6px;
+        }
+        .alert-title {
+            font-weight: 600;
+            color: #92400e;
+            margin: 0 0 5px 0;
+        }
+        .alert-text {
+            color: #92400e;
+            margin: 0;
+            font-size: 14px;
+        }
+        .form-data {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        .form-row {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .form-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 5px;
+            display: block;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-value {
+            color: #1e293b;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .message-box {
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .footer {
+            background-color: #f1f5f9;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer p {
+            margin: 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .timestamp {
+            background-color: #dbeafe;
+            color: #1e40af;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: inline-block;
+            font-weight: 500;
+        }
+        .priority-high {
+            background-color: #fee2e2;
+            color: #dc2626;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>uVision</h1>
+            <p>New Contact Form Submission</p>
+        </div>
+        
+        <div class="content">
+            <div class="alert">
+                <p class="alert-title">New Contact Request</p>
+                <p class="alert-text">You have received a new message through the uVision contact form. Please review and respond promptly.</p>
+            </div>
+
+            <div class="form-data">
+                <div class="form-row">
+                    <span class="form-label">Full Name</span>
+                    <div class="form-value"><%= fullName %></div>
+                </div>
+                
+                <div class="form-row">
+                    <span class="form-label">Email Address</span>
+                    <div class="form-value"><%= email %></div>
+                </div>
+                
+                <div class="form-row">
+                    <span class="form-label">Phone Number</span>
+                    <div class="form-value"><%= phone %></div>
+                </div>
+                
+                <div class="form-row">
+                    <span class="form-label">Subject</span>
+                    <div class="form-value"><strong><%= subject %></strong></div>
+                </div>
+                
+                <div class="form-row">
+                    <span class="form-label">Message</span>
+                    <div class="message-box"><%= message %></div>
+                </div>
+                
+                <div class="form-row">
+                    <span class="form-label">Submitted At</span>
+                    <div class="form-value">
+                        <span class="timestamp"><%= submittedAt %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; <%= new Date().getFullYear() %> uVision. Professional Services Platform.</p>
+            <p>This is an automated notification from your contact form system.</p>
+        </div>
+    </div>
+</body>
+</html>

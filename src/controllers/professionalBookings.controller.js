@@ -8,8 +8,14 @@ const {
     professionalServices: ProfessionalServicesModel,
     professionalBookings: ProfessionalBookingsModel,
     professionalAvailability: ProfessionalAvailabilityModel,
+    bookingPayments: BookingPaymentsModel,
+    professionalReviews: ProfessionalReviewsModel,
     Op
 } = require("../models/index");
+
+// Import Stripe service
+const stripeService = require('../services/stripe.service');
+const emailService = require('../services/email');
 
 // Helper function to generate booking number
 const generateBookingNumber = () => {
@@ -84,18 +90,20 @@ exports.createBooking = async (data, loginUser) => {
         const booking = await ProfessionalBookingsModel.create(bookingData);
         
         return { 
-            message: "Booking created successfully. Please complete the details.", 
-            booking: {
-                id: booking.id,
-                bookingNumber: booking.bookingNumber,
-                confirmationCode: booking.confirmationCode,
-                professional: professional,
-                service: service,
-                eventDate: booking.eventDate,
-                totalAmount: booking.totalAmount,
-                currency: booking.currency,
-                status: booking.status
-            }
+            data: {
+                booking: {
+                    id: booking.id,
+                    bookingNumber: booking.bookingNumber,
+                    confirmationCode: booking.confirmationCode,
+                    professional: professional,
+                    service: service,
+                    eventDate: booking.eventDate,
+                    totalAmount: booking.totalAmount,
+                    currency: booking.currency,
+                    status: booking.status
+                }
+            },
+            message: "Booking created successfully. Please complete the details."
         };
     } catch (error) {
         throw error;
@@ -160,8 +168,10 @@ exports.updateBookingDetails = async (bookingId, data, loginUser) => {
         });
 
         return { 
-            message: "Booking details updated successfully.", 
-            booking: updatedBooking 
+            data: {
+                booking: updatedBooking
+            },
+            message: "Booking details updated successfully."
         };
     } catch (error) {
         throw error;
@@ -226,9 +236,11 @@ exports.processPayment = async (bookingId, paymentData, loginUser) => {
         });
 
         return { 
-            message: "Payment processed successfully. Booking confirmed.", 
-            booking: updatedBooking,
-            transactionId: transactionId
+            data: {
+                booking: updatedBooking,
+                transactionId: transactionId
+            },
+            message: "Payment processed successfully. Booking confirmed."
         };
     } catch (error) {
         throw error;
@@ -265,9 +277,11 @@ exports.confirmBooking = async (bookingId, confirmationCode, loginUser) => {
         // 3. Update professional's availability
 
         return { 
-            message: "Booking confirmed successfully!", 
-            booking: booking,
-            confirmationCode: confirmationCode
+            data: {
+                booking: booking,
+                confirmationCode: confirmationCode
+            },
+            message: "Booking confirmed successfully!"
         };
     } catch (error) {
         throw error;
@@ -277,14 +291,89 @@ exports.confirmBooking = async (bookingId, confirmationCode, loginUser) => {
 // Get client's bookings
 exports.getMyBookings = async (loginUser) => {
     try {
-        const bookings = await ProfessionalBookingsModel.scope(['professional', 'service']).findAll({
+        const bookings = await ProfessionalBookingsModel.findAll({
             where: { clientId: loginUser.id },
+            include: [
+                {
+                    model: ProfessionalProfileModel,
+                    as: 'professional',
+                    include: [
+                        {
+                            model: UserModel,
+                            as: 'user',
+                            attributes: ['id', 'fullName', 'profilePicture']
+                        }
+                    ]
+                },
+                {
+                    model: ProfessionalServicesModel,
+                    as: 'service',
+                    attributes: ['id', 'serviceName', 'price']
+                },
+                {
+                    model: ProfessionalReviewsModel,
+                    as: 'review',
+                    required: false, // LEFT JOIN - include even if no review
+                    where: {
+                        clientId: loginUser.id,
+                        isDeleted: false
+                    },
+                    attributes: ['id', 'rating', 'comment', 'createdAt']
+                }
+            ],
             order: [['createdAt', 'DESC']]
         });
 
         return { 
-            bookings, 
+            data: {
+                bookings
+            },
             message: "Bookings retrieved successfully." 
+        };
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Get professional's bookings
+exports.getProfessionalBookings = async (loginUser) => {
+    try {
+        // Get professional profile first
+        const professional = await ProfessionalProfileModel.findOne({
+            where: { userId: loginUser.id }
+        });
+
+        if (!professional) {
+            throw new createError["NotFound"]("Professional profile not found");
+        }
+
+        const bookings = await ProfessionalBookingsModel.findAll({
+            where: { professionalId: professional.id },
+            include: [
+                {
+                    model: UserModel,
+                    as: 'client',
+                    attributes: ['id', 'fullName', 'lastName', 'email', 'profilePicture']
+                },
+                {
+                    model: ProfessionalServicesModel,
+                    as: 'service',
+                    attributes: ['id', 'serviceName', 'price',]
+                },
+                {
+                    model: ProfessionalProfileModel,
+                    as: 'professional',
+                    attributes: ['id', 'equipments','specialization']
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        return { 
+            data: {
+                bookings
+            },
+            message: "Professional bookings retrieved successfully." 
         };
     } catch (error) {
         throw error;
@@ -306,7 +395,9 @@ exports.getBookingDetails = async (bookingId, loginUser) => {
         }
 
         return { 
-            booking, 
+            data: {
+                booking
+            },
             message: "Booking details retrieved successfully." 
         };
     } catch (error) {
@@ -345,6 +436,7 @@ exports.cancelBooking = async (bookingId, reason, loginUser) => {
         // 3. Update professional's availability
 
         return { 
+            data: {},
             message: "Booking cancelled successfully." 
         };
     } catch (error) {
@@ -398,8 +490,429 @@ exports.getAvailableSlots = async (professionalId, date) => {
         });
 
         return { 
-            availableSlots, 
+            data: {
+                availableSlots
+            },
             message: "Available slots retrieved successfully." 
+        };
+    } catch (error) {
+        throw error;
+    }
+};
+
+// ================== PAYMENT PROCESSING FUNCTIONS ==================
+
+/**
+ * Process upfront payment (30%) for booking
+ */
+exports.processUpfrontPayment = async (data, loginUser) => {
+    try {
+        const { bookingId, paymentMethodId } = data;
+
+        // Find booking and verify ownership
+        const booking = await ProfessionalBookingsModel.findOne({
+            where: { 
+                id: bookingId, 
+                clientId: loginUser.id, 
+                status: 'pending' 
+            },
+            include: [
+                {
+                    model: ProfessionalProfileModel,
+                    as: 'professional'
+                },
+                {
+                    model: ProfessionalServicesModel,
+                    as: 'service'
+                }
+            ]
+        });
+
+        if (!booking) {
+            throw new createError["NotFound"]("Booking not found or not accessible");
+        }
+
+        // Check if professional has active Stripe account
+        if (!booking.professional.stripeConnectAccountId || booking.professional.paymentAccountStatus !== 'active') {
+            throw new createError["BadRequest"]("Professional payment account not set up");
+        }
+
+        // Get client details
+        const client = await UserModel.findOne({
+            where: { id: loginUser.id }
+        });
+
+        // Calculate payment amounts
+        const amounts = stripeService.calculateBookingAmounts(booking.totalAmount);
+
+        // Create upfront payment intent
+        const { paymentIntent, amounts: calculatedAmounts } = await stripeService.createBookingPaymentIntent({
+            totalAmount: booking.totalAmount,
+            professionalStripeAccountId: booking.professional.stripeConnectAccountId,
+            bookingId: booking.id,
+            clientId: loginUser.id
+        }, client.email);
+
+        // Store payment record
+        const paymentRecord = await BookingPaymentsModel.create({
+            bookingId: booking.id,
+            clientId: loginUser.id,
+            professionalId: booking.professionalId,
+            stripePaymentIntentId: paymentIntent.id,
+            stripeAccountId: booking.professional.stripeConnectAccountId,
+            paymentType: 'upfront_30',
+            amount: calculatedAmounts.upfrontAmount,
+            platformFee: calculatedAmounts.platformFee * 0.30, // 30% of platform fee
+            professionalAmount: calculatedAmounts.professionalUpfront,
+            currency: 'EUR',
+            status: paymentIntent.status
+        });
+
+        // Update booking with payment info
+        await booking.update({
+            paymentStatus: 'partial',
+            advanceAmount: calculatedAmounts.upfrontAmount,
+            remainingAmount: calculatedAmounts.remainingAmount,
+            transactionId: paymentIntent.id
+        });
+
+        return {
+            message: "Payment intent created successfully",
+            data: {
+                paymentIntent: {
+                    id: paymentIntent.id,
+                    client_secret: paymentIntent.client_secret,
+                    amount: calculatedAmounts.upfrontAmount,
+                    currency: 'EUR'
+                },
+                amounts: calculatedAmounts,
+                booking: {
+                    id: booking.id,
+                    bookingNumber: booking.bookingNumber,
+                    service: booking.service.serviceName,
+                    eventDate: booking.eventDate
+                }
+            }
+        };
+    } catch (error) {
+        // Handle Stripe cross-border payment error specifically
+        if (error.message && error.message.includes('Cannot create a destination charge for connected accounts in FR')) {
+            throw new createError["BadRequest"]("Payment processing temporarily unavailable for this professional. Please contact support or try again later.");
+        }
+        
+        // Handle other Stripe errors
+        if (error.type === 'StripeError' || error.type === 'StripeInvalidRequestError') {
+            throw new createError["BadRequest"]("Payment processing error. Please check your payment details and try again.");
+        }
+        
+        throw error;
+    }
+};
+
+/**
+ * Confirm upfront payment after successful payment method confirmation
+ */
+exports.confirmUpfrontPayment = async (data, loginUser) => {
+    try {
+        const { paymentIntentId } = data;
+
+        // Find payment record
+        const paymentRecord = await BookingPaymentsModel.findOne({
+            where: { 
+                stripePaymentIntentId: paymentIntentId,
+                clientId: loginUser.id,
+                paymentType: 'upfront_30'
+            },
+            include: [
+                {
+                    model: ProfessionalBookingsModel,
+                    as: 'booking'
+                }
+            ]
+        });
+
+        if (!paymentRecord) {
+            throw new createError["NotFound"]("Payment record not found");
+        }
+
+        // Confirm and capture the payment
+        const paymentResult = await stripeService.confirmAndCaptureUpfrontPayment(paymentIntentId);
+
+        // Handle case where additional client action is required
+        if (paymentResult.status === 'requires_action') {
+            return {
+                success: false,
+                requires_action: true,
+                client_secret: paymentResult.client_secret,
+                next_action: paymentResult.next_action,
+                message: paymentResult.message || "Additional authentication required"
+            };
+        }
+
+        // Update payment record
+        await paymentRecord.update({
+            status: paymentResult.status,
+            capturedAt: paymentResult.status === 'succeeded' ? new Date() : null,
+            metadata: paymentResult
+        });
+
+        // Update booking status if payment successful
+        if (paymentResult.status === 'succeeded') {
+            await paymentRecord.booking.update({
+                status: 'confirmed',
+                paymentStatus: 'partial',
+                confirmationDate: new Date()
+            });
+
+            // Generate confirmation code for remaining payment
+            const confirmationCode = generateConfirmationCode();
+            await paymentRecord.booking.update({ confirmationCode });
+
+            // Get complete booking details for email
+            const completeBooking = await ProfessionalBookingsModel.findOne({
+                where: { id: paymentRecord.booking.id },
+                include: [
+                    {
+                        model: ProfessionalProfileModel,
+                        as: 'professional',
+                        include: [
+                            {
+                                model: UserModel,
+                                as: 'user'
+                            }
+                        ]
+                    },
+                    {
+                        model: UserModel,
+                        as: 'client'
+                    },
+                    {
+                        model: ProfessionalServicesModel,
+                        as: 'service'
+                    }
+                ]
+            });
+
+            // Calculate payment amounts for email
+            const amounts = stripeService.calculateBookingAmounts(completeBooking.totalAmount);
+
+            // Send booking confirmation email
+            try {
+                await emailService.sendEmail({
+                    to: completeBooking.client.email,
+                    subject: `Booking Confirmed - ${completeBooking.service.serviceName}`,
+                    template: '/views/booking-confirmation',
+                    data: {
+                        clientName: completeBooking.client.fullName ,
+                        bookingNumber: completeBooking.bookingNumber,
+                        professionalName: completeBooking.professional.user.fullName,
+                        serviceName: completeBooking.service.serviceName,
+                        eventDate: completeBooking.eventDate ? new Date(completeBooking.eventDate).toLocaleDateString() : 'TBD',
+                        eventTime: completeBooking.startTime || completeBooking.eventTime || 'TBD',
+                        location: completeBooking.location || 'TBD',
+                        specialRequests: completeBooking.specialRequirements || completeBooking.specialRequests,
+                        totalAmount: parseFloat(completeBooking.totalAmount).toFixed(2),
+                        upfrontAmount: amounts.upfrontAmount,
+                        remainingAmount: amounts.remainingAmount,
+                        platformFee: amounts.platformFee,
+                        confirmationCode: confirmationCode,
+                        frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
+                    }
+                });
+            } catch (emailError) {
+                console.error('Error sending booking confirmation email:', emailError);
+                // Don't fail the payment if email fails
+            }
+
+            return {
+                data: {
+                    booking: {
+                        id: paymentRecord.booking.id,
+                        status: 'confirmed',
+                        confirmationCode: confirmationCode,
+                        paymentStatus: 'partial'
+                    },
+                    paymentStatus: paymentResult.status
+                },
+                message: "Upfront payment confirmed successfully"
+            };
+        } else {
+            throw new createError["BadRequest"](`Payment failed: ${paymentResult.status}`);
+        }
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Process remaining payment (70%) when confirmation code is verified
+ */
+exports.processRemainingPayment = async (data, bookingId) => {
+    try {
+        const {  confirmationCode } = data;
+        console.log("Processing remaining payment for booking:", bookingId, "with confirmation code:", confirmationCode);
+
+        // Find booking with confirmation code
+        const booking = await ProfessionalBookingsModel.findOne({
+            where: { 
+                id: bookingId,
+                confirmationCode: confirmationCode,
+                status: 'confirmed',
+                paymentStatus: 'partial'
+            },
+            include: [
+                {
+                    model: ProfessionalProfileModel,
+                    as: 'professional'
+                }
+            ]
+        });
+
+        if (!booking) {
+            throw new createError["NotFound"]("Booking not found or confirmation code invalid");
+        }
+
+        // Get the original upfront payment record to get payment method
+        const upfrontPayment = await BookingPaymentsModel.findOne({
+            where: { 
+                bookingId: booking.id,
+                paymentType: 'upfront_30',
+                status: 'succeeded'
+            }
+        });
+
+        if (!upfrontPayment) {
+            throw new createError["NotFound"]("Original payment not found");
+        }
+
+        // Get payment method from original payment intent
+        const originalIntent = await stripeService.getPaymentIntentDetails(upfrontPayment.stripePaymentIntentId);
+        const paymentMethodId = originalIntent.payment_method;
+
+        // Get client details
+        const client = await UserModel.findOne({
+            where: { id: booking.clientId }
+        });
+
+        // Create remaining payment intent
+        const { paymentIntent, amounts } = await stripeService.createRemainingPaymentIntent({
+            totalAmount: booking.totalAmount,
+            professionalStripeAccountId: booking.professional.stripeConnectAccountId,
+            bookingId: booking.id,
+            clientId: booking.clientId
+        }, client.email, paymentMethodId);
+
+        // Capture the remaining payment immediately
+        const capturedIntent = await stripeService.captureRemainingPayment(paymentIntent.id);
+
+        // Store remaining payment record
+        const remainingPaymentRecord = await BookingPaymentsModel.create({
+            bookingId: booking.id,
+            clientId: booking.clientId,
+            professionalId: booking.professionalId,
+            stripePaymentIntentId: capturedIntent.id,
+            stripeAccountId: booking.professional.stripeConnectAccountId,
+            paymentType: 'remaining_70',
+            amount: amounts.remainingAmount,
+            platformFee: amounts.platformFee * 0.70, // 70% of platform fee
+            professionalAmount: amounts.professionalRemaining,
+            currency: 'EUR',
+            status: capturedIntent.status,
+            capturedAt: new Date(),
+            metadata: capturedIntent
+        });
+
+        // Update booking status to completed
+        await booking.update({
+            status: 'completed',
+            paymentStatus: 'paid',
+            completionDate: new Date(),
+            confirmationCode: null // Clear confirmation code after use
+        });
+
+        return {
+            data: {
+                booking: {
+                    id: booking.id,
+                    status: 'completed',
+                    paymentStatus: 'paid'
+                },
+                paymentAmount: amounts.remainingAmount,
+                totalPaid: parseFloat(booking.totalAmount)
+            },
+            message: "Remaining payment processed successfully"
+        };
+    } catch (error) {
+        console.error('Error processing remaining payment:', error);
+        
+        // Handle specific Stripe PaymentMethod errors
+        if (error.message && error.message.includes('No payment method attached to customer')) {
+            throw new createError["BadRequest"]("Payment method not available. Please contact the client to complete payment setup first.");
+        }
+        
+        if (error.message && error.message.includes('PaymentMethod was previously used')) {
+            throw new createError["BadRequest"]("Payment method cannot be reused. Please ask the client to provide a new payment method.");
+        }
+        
+        // Handle Stripe cross-border payment error specifically
+        if (error.message && error.message.includes('Cannot create a destination charge for connected accounts in FR')) {
+            throw new createError["BadRequest"]("Payment processing temporarily unavailable for this professional. Please contact support or try again later.");
+        }
+        
+        // Handle other Stripe errors
+        if (error.type === 'StripeError' || error.type === 'StripeInvalidRequestError') {
+            throw new createError["BadRequest"](`Payment processing error: ${error.message}. Please contact support if the issue persists.`);
+        }
+        
+        throw error;
+    }
+};
+
+/**
+ * Get booking payment details
+ */
+exports.getBookingPayments = async (bookingId, loginUser) => {
+    try {
+        // Verify booking ownership (client or professional)
+        const booking = await ProfessionalBookingsModel.findOne({
+            where: { 
+                id: bookingId,
+                [Op.or]: [
+                    { clientId: loginUser.id },
+                    { '$professional.userId$': loginUser.id }
+                ]
+            },
+            include: [
+                {
+                    model: ProfessionalProfileModel,
+                    as: 'professional'
+                }
+            ]
+        });
+
+        if (!booking) {
+            throw new createError["NotFound"]("Booking not found or not accessible");
+        }
+
+        // Get all payment records for this booking
+        const payments = await BookingPaymentsModel.findAll({
+            where: { bookingId: bookingId },
+            order: [['createdAt', 'ASC']]
+        });
+
+        return {
+            data: {
+                booking: {
+                    id: booking.id,
+                    bookingNumber: booking.bookingNumber,
+                    status: booking.status,
+                    paymentStatus: booking.paymentStatus,
+                    totalAmount: booking.totalAmount,
+                    currency: booking.currency
+                },
+                payments: payments
+            },
+            message: "Payment details retrieved successfully"
         };
     } catch (error) {
         throw error;

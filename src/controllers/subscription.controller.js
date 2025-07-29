@@ -3,7 +3,16 @@ const {
     subscription: SubscriptionModel,
     professionalProfile: ProfessionalProfileModel
 } = require('../models');
-const { createCheckoutSession, getSubscription, cancelSubscription } = require('../services/stripe.service');
+const { 
+    createCheckoutSession, 
+    getSubscription, 
+    cancelSubscription,
+    createExpressAccount,
+    generateAccountLink,
+    retrieveAccountStatus,
+    createDashboardLink,
+    deleteExpressAccount
+} = require('../services/stripe.service');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const createError = require('http-errors');
 
@@ -242,9 +251,227 @@ const cancelUserSubscription = async (req, res) => {
     }
 };
 
+/**
+ * PAYMENT MANAGEMENT - Stripe Connect Controllers
+ */
+
+/**
+ * Create Stripe Connect Account
+ */
+const createPaymentAccount = async (req, res) => {
+    try {
+        const userId = req.loginUser.id;
+        const { email, country = 'US' } = req.body;
+
+        // Check if user has professional profile
+        const professionalProfile = await ProfessionalProfileModel.findOne({
+            where: { userId, isDeleted: false }
+        });
+
+        if (!professionalProfile) {
+            throw new createError.BadRequest('Professional profile not found');
+        }
+
+        // Check if already has a connected account
+        if (professionalProfile.stripeConnectAccountId) {
+            throw new createError.Conflict('Payment account already exists');
+        }
+
+        // Create Stripe Express account
+        const account = await createExpressAccount(email, country);
+
+        // Generate onboarding link
+        const refreshUrl = `${process.env.FRONTEND_URL}/manage-payments?refresh=true`;
+        const returnUrl = `${process.env.FRONTEND_URL}/manage-payments?success=true`;
+        
+        const accountLink = await generateAccountLink(account.id, refreshUrl, returnUrl);
+
+        // Update professional profile
+        await professionalProfile.update({
+            stripeConnectAccountId: account.id,
+            paymentAccountStatus: 'pending',
+            paymentAccountEmail: email
+        });
+
+        return {
+            data: {
+                accountId: account.id,
+                onboardingUrl: accountLink.url
+            },
+            message: 'Payment account created successfully'
+        };
+
+    } catch (error) {
+        console.error('Error in createPaymentAccount:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get Payment Account Status
+ */
+const getPaymentAccountStatus = async (req, res) => {
+    try {
+        const userId = req.loginUser.id;
+
+        const professionalProfile = await ProfessionalProfileModel.findOne({
+            where: { userId, isDeleted: false }
+        });
+
+        if (!professionalProfile) {
+            throw new createError.BadRequest('Professional profile not found');
+        }
+
+        // If no connected account
+        if (!professionalProfile.stripeConnectAccountId) {
+            return {
+                data: {
+                    hasAccount: false,
+                    status: 'none',
+                    email: null,
+                    canReceivePayments: false
+                },
+                message: 'No payment account found'
+            };
+        }
+
+        // Get account status from Stripe
+        let accountStatus;
+        try {
+            accountStatus = await retrieveAccountStatus(professionalProfile.stripeConnectAccountId);
+        } catch (stripeError) {
+            // If account doesn't exist in Stripe, reset local data
+            await professionalProfile.update({
+                stripeConnectAccountId: null,
+                paymentAccountStatus: 'none',
+                paymentAccountEmail: null
+            });
+
+            return {
+                data: {
+                    hasAccount: false,
+                    status: 'none',
+                    email: null,
+                    canReceivePayments: false
+                },
+                message: 'Payment account not found in Stripe'
+            };
+        }
+
+        // Determine status
+        let status = 'pending';
+        if (accountStatus.details_submitted && accountStatus.charges_enabled) {
+            status = 'active';
+        } else if (accountStatus.requirements?.currently_due?.length > 0) {
+            status = 'restricted';
+        }
+
+        // Update local status if different
+        if (professionalProfile.paymentAccountStatus !== status) {
+            await professionalProfile.update({ paymentAccountStatus: status });
+        }
+
+        return {
+            data: {
+                hasAccount: true,
+                status: status,
+                email: professionalProfile.paymentAccountEmail,
+                canReceivePayments: accountStatus.charges_enabled && accountStatus.payouts_enabled,
+                accountDetails: {
+                    detailsSubmitted: accountStatus.details_submitted,
+                    chargesEnabled: accountStatus.charges_enabled,
+                    payoutsEnabled: accountStatus.payouts_enabled
+                }
+            },
+            message: 'Payment account status retrieved successfully'
+        };
+
+    } catch (error) {
+        console.error('Error in getPaymentAccountStatus:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get Dashboard Link
+ */
+const getPaymentDashboardLink = async (req, res) => {
+    try {
+        const userId = req.loginUser.id;
+
+        const professionalProfile = await ProfessionalProfileModel.findOne({
+            where: { userId, isDeleted: false }
+        });
+
+        if (!professionalProfile || !professionalProfile.stripeConnectAccountId) {
+            throw new createError.BadRequest('No payment account found');
+        }
+
+        const dashboardLink = await createDashboardLink(professionalProfile.stripeConnectAccountId);
+
+        return {
+            data: {
+                dashboardUrl: dashboardLink.url
+            },
+            message: 'Dashboard link generated successfully'
+        };
+
+    } catch (error) {
+        console.error('Error in getPaymentDashboardLink:', error);
+        throw error;
+    }
+};
+
+/**
+ * Remove Payment Account
+ */
+const removePaymentAccount = async (req, res) => {
+    try {
+        const userId = req.loginUser.id;
+
+        const professionalProfile = await ProfessionalProfileModel.findOne({
+            where: { userId, isDeleted: false }
+        });
+
+        if (!professionalProfile || !professionalProfile.stripeConnectAccountId) {
+            throw new createError.BadRequest('No payment account found');
+        }
+
+        const accountId = professionalProfile.stripeConnectAccountId;
+
+        // Delete account from Stripe
+        try {
+            await deleteExpressAccount(accountId);
+        } catch (stripeError) {
+            // If account already deleted in Stripe, continue with local cleanup
+            console.warn('Account not found in Stripe during deletion:', stripeError.message);
+        }
+
+        // Update professional profile
+        await professionalProfile.update({
+            stripeConnectAccountId: null,
+            paymentAccountStatus: 'none',
+            paymentAccountEmail: null
+        });
+
+        return {
+            message: 'Payment account removed successfully'
+        };
+
+    } catch (error) {
+        console.error('Error in removePaymentAccount:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     createSubscriptionCheckout,
     handleStripeWebhook,
     getSubscriptionStatus,
-    cancelUserSubscription
+    cancelUserSubscription,
+    // Payment Management
+    createPaymentAccount,
+    getPaymentAccountStatus,
+    getPaymentDashboardLink,
+    removePaymentAccount
 };

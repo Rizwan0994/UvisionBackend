@@ -30,6 +30,9 @@ router.use('/categories', require("./categories.routes"));
 // Public professional routes (search and profiles)
 router.use('/professional', require("./professionalSearch.routes"));
 
+// Contact routes (public)
+router.use('/contact', require("./contact.routes"));
+
 // Upload routes (has both public and protected endpoints)
 router.use('/upload', require("./upload.routes"));
 
@@ -58,4 +61,5 @@ router.use('/companyRole', require("./companyRole.routes"));
 router.use('/designationGroup', require("./designationGroup.routes"));
 router.use('/professional-dashboard', require("./professional.routes"));
 router.use('/booking', require("./booking.routes"));
+router.use('/reviews', require("./review.routes"));
 module.exports = router;
