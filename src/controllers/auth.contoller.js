@@ -16,6 +16,7 @@ const {
     user: UserModel,
     roles: RoleModel,
     userLogs: UserLogs,
+    professionalProfile: ProfessionalProfileModel,
     Op
 } = require("../models/index");
 const createError = require('http-errors');
@@ -46,7 +47,15 @@ exports.signUp = async (data) => {
             obj.role = findRole.id;
         }
 
-        await UserModel.create({ ...obj, slug: uuidv4() });
+        const userCreated=await UserModel.create({ ...obj, slug: uuidv4() });
+         //after creating  user if role is "professional" then create a professional profile
+        if(role && role.toLowerCase() === 'professional') {
+            const professionalProfile = {
+                userId: userCreated.id,
+                title: 'Professional Profile',
+            };
+            await ProfessionalProfileModel.create(professionalProfile);
+        }
         return { 
             data: {},
             message: "User added successfully."
