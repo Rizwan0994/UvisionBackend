@@ -24,9 +24,6 @@ module.exports = (sequelize) => {
         initialMessage:{ type: DataTypes.BOOLEAN, defaultValue: true },
         isImportantChat:{ type: DataTypes.BOOLEAN, defaultValue: true },
     }, {
-        defaultScope: {
-            where: { isGhostChat: false },
-        },
         sequelize,
         modelName: 'chatusers',
         timestamps: true,

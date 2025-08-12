@@ -1,4 +1,4 @@
-const { disconnectUserToOffline, changeUserProfileStatus } = require("../controllers/user.contoller");
+// const { disconnectUserToOffline, changeUserProfileStatus } = require("../controllers/user.contoller");
 const { createUserLog } = require("../controllers/userLogs.controller");
 const { logoutUser } = require("../controllers/auth.contoller");
 
@@ -14,14 +14,14 @@ module.exports = (io, socket, connectedUsers) => {
       });  
   
       socket.on('change-profile-status', async data => {
-        await changeUserProfileStatus(connectedUsers, socket.handshake.query.loginUser, socket, io, data);
+        // await changeUserProfileStatus(connectedUsers, socket.handshake.query.loginUser, socket, io, data);
       });
   
       socket.on('disconnect', async data => {
         console.log("Socket disconnected", socket.id);
         socket.leave(socket.handshake.query.loginUser.slug);
         // socket.socket.reconnect();
-        await disconnectUserToOffline(connectedUsers, socket.handshake.query.loginUser, socket, io);     
+        // await disconnectUserToOffline(connectedUsers, socket.handshake.query.loginUser, socket, io);     
         await createUserLog({ ...data, userId: socket.handshake.query.loginUser.id }); 
         // const lastToDisconnect = io.of("/").sockets.size === 0;
         // if (lastToDisconnect) {

@@ -90,7 +90,7 @@ exports.chatModel = (db) => {
         include: {
             model: db.chatUser,
             where: {
-                isGhostChat: false,
+                // isGhostChat: false,
             },
             attributes: [
                 'id',
@@ -126,7 +126,7 @@ exports.chatModel = (db) => {
             include: [
                 {
                     model: db.user,
-                    attributes: ['id', 'name',],
+                    attributes: ['id', 'fullName',],
                     as: 'sendByDetail'
                 },
                 {
@@ -233,7 +233,7 @@ exports.messageModel = (db) => {
             attributes: ['userId', 'emojiCode'],
             model: db.messageEmoji,
             include: {
-                attributes: ['id', 'name', 'profilePicture'],
+                attributes: ['id', 'fullName', 'profilePicture'],
                 model: db.user,
                 as: "userEmojiInfo",
                 required: false
@@ -259,7 +259,7 @@ exports.messageModel = (db) => {
     db.message.addScope("sendByDetail",{
         include:{
             model: db.user,  
-            attributes: ['id', 'profilePicture', 'name', 'companyName', 'mainDesignation'],
+            attributes: ['id', 'profilePicture', 'fullName', 'mainDesignation'],
             include:{
                 model: db.companyRole,
                 as: "companyRoleData",
@@ -275,7 +275,7 @@ exports.messageModel = (db) => {
             attributes: ['id', 'userId', 'emojiCode', 'messageId'],
             model: db.messageEmoji,
             include: {
-                attributes: ['id', 'name', 'profilePicture'],
+                attributes: ['id', 'fullName', 'profilePicture'],
                 model: db.user,
                 as: "userEmojiInfo",
                 required: false
@@ -308,7 +308,7 @@ exports.messageModel = (db) => {
                 {
                     model: db.user, 
                     as: "sendByDetail", 
-                    attributes: ['id', 'name', 'companyName', 'mainDesignation'],
+                    attributes: ['id', 'fullName',  'mainDesignation'],
                     required: false
                 },
                 {
@@ -390,7 +390,7 @@ exports.messageEmojiModel = (db) => {
     db.messageEmoji.belongsTo(db.user, { foreignKey: "userId", as: "userEmojiInfo"});
     db.messageEmoji.addScope("userEmojiInfo",{
         include: {
-            attributes: ['id', 'name', 'profilePicture'],
+            attributes: ['id', 'fullName', 'profilePicture'],
             model: db.user,
             as: "userEmojiInfo",
             required: false

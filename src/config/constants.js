@@ -133,13 +133,13 @@ module.exports = Object.freeze({
         FINISHED: 'finished',
     },
     PERMISSION_TO_DISPLAY :["superAdmin","admin"],
-    USER_FIELDS : ["id", "name", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "companyName", "fontSize", "mainDesignation", 'lastSeen', 'extension', 'chatWallpaper', 'keywords', 'about', 'isSilentMode', 'isRoutineNotificationMute', 'isEmergencyNotificationMute','isUrgentNotificationMute' ],
+    USER_FIELDS : ["id", "fullName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "mainDesignation", "isSilentMode" ],
     USER_FIELDS_FORMAT :{
-        "superAdmin" : ["id", "name","firstName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "companyName", "fontSize", "mainDesignation", 'lastSeen', 'extension', 'chatWallpaper', 'keywords', 'about', 'ghostUser', 'isGhostActive', 'isSilentMode', 'isRoutineNotificationMute', 'isEmergencyNotificationMute','isUrgentNotificationMute', 'taskAlertTimer'],
-        "user" : ["id", "name","firstName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "companyName", "fontSize", "mainDesignation", 'lastSeen', 'extension', 'chatWallpaper', 'keywords', 'about', 'isSilentMode', 'isRoutineNotificationMute', 'isEmergencyNotificationMute','isUrgentNotificationMute', 'taskAlertTimer'  ],
-        "admin" : ["id", "name","firstName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "companyName", "fontSize", "mainDesignation", 'lastSeen', 'extension', 'chatWallpaper', 'keywords', 'about', 'isSilentMode', 'isRoutineNotificationMute', 'isEmergencyNotificationMute','isUrgentNotificationMute', 'taskAlertTimer' ]
+        "superAdmin" : ["id", "fullName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "mainDesignation", "isSilentMode"],
+        "user" : ["id", "fullName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "mainDesignation", "isSilentMode"],
+        "admin" : ["id", "fullName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "mainDesignation", "isSilentMode"]
     },
-    CHAT_LIST_USER_FIELDS :  ["id", "name", "email", "profilePicture", "isDeleted", "profileStatus", "createdAt", "updatedAt"],
+    CHAT_LIST_USER_FIELDS :  ["id", "fullName", "email", "profilePicture", "isDeleted", "profileStatus", "createdAt", "updatedAt"],
     MESSAGE_LIMIT_SEARCH : 10,
     RECORD_DISPLAY_LIMIT: 20,
     SERVICE : {

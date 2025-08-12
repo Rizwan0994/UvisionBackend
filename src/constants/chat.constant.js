@@ -34,7 +34,7 @@ module.exports = Object.freeze({
         STARTED: 'started',
         FINISHED: 'finished',
     },
-    CHAT_LIST_USER_FIELDS :  ["id", "name", "email", "profilePicture", "isDeleted", "profileStatus", "createdAt", "updatedAt"],
+    CHAT_LIST_USER_FIELDS :  ["id", "fullName", "email", "profilePicture", "isDeleted", "profileStatus", "createdAt", "updatedAt"],
     TEMPLATE_TYPE: {
         PUBLIC: "public",
         PRIVATE: "private"
