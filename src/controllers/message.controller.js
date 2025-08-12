@@ -95,7 +95,7 @@ exports.create = async (data) => {
                 include: [
                     {
                         model: UserModel, 
-                        attributes: ['id', 'name', 'companyName', 'mainDesignation'],
+                        attributes: ['id', 'name', 'mainDesignation'],
                         as: "sendByDetail", 
                     },
                     {
@@ -110,7 +110,7 @@ exports.create = async (data) => {
             result.dataValues.userDesignations = await UserDesignationsModel.findAll({
                 where :{
                     userId : data.sendBy,
-                    priority : true
+                    // priority : true
                 },
                 include: [{
                     model: DesignationModel,
@@ -529,7 +529,7 @@ exports.checkUserLastMessage = async (dataToList, loginUser) => {
             include: [
                 {
                     model: UserModel,  
-                    attributes: ['id', 'profilePicture', 'name', 'companyName', 'mainDesignation'],
+                    attributes: ['id', 'profilePicture', 'name', 'mainDesignation'],
                     as: "sendByDetail",
                 },
                 {
@@ -546,7 +546,7 @@ exports.checkUserLastMessage = async (dataToList, loginUser) => {
                         {
                             model: UserModel, 
                             as: "sendByDetail", 
-                            attributes: ['id', 'name', 'companyName', 'mainDesignation'],
+                            attributes: ['id', 'name', 'mainDesignation'],
                         },
                         {
                             model : ChatModel,
@@ -608,7 +608,7 @@ exports.getMessageRecipient = async (dataToList, loginUser) => {
                 required: false
             },{
                 model: UserModel,
-                attributes : ['profilePicture', 'name', 'mainDesignation', 'companyName'],
+                attributes : ['profilePicture', 'name', 'mainDesignation',],
                 as: "sendByDetail"
             }]
         })
@@ -632,7 +632,6 @@ exports.sendMessage = async (data) =>{
         data.sendByDetail = { 
             profilePicture: data.loginUser.profilePicture, 
             name: data.loginUser.name, 
-            companyName: data.loginUser.companyName, 
             mainDesignation: data.loginUser.mainDesignation, 
             userDesignations: savedMessage.userDesignations 
         };

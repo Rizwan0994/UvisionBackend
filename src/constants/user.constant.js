@@ -28,13 +28,12 @@ module.exports = Object.freeze({
         DELETE: "delete",
         DOWNLOAD: "download"
     },
-    PERMISSION_TO_DISPLAY :["superAdmin","admin"],
-    USER_FIELDS : ["id", "name", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "companyName", "fontSize", "mainDesignation", 'lastSeen', 'extension', 'chatWallpaper', 'keywords', 'about', 'isSilentMode', 'isRoutineNotificationMute', 'isEmergencyNotificationMute','isUrgentNotificationMute' ],
-    USER_FIELDS_FORMAT :{
-        "superAdmin" : ["id", "name","firstName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "companyName", "fontSize", "mainDesignation", 'lastSeen', 'extension', 'chatWallpaper', 'keywords', 'about', 'ghostUser', 'isGhostActive', 'isSilentMode', 'isRoutineNotificationMute', 'isEmergencyNotificationMute','isUrgentNotificationMute', 'taskAlertTimer'],
-        "user" : ["id", "name","firstName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "companyName", "fontSize", "mainDesignation", 'lastSeen', 'extension', 'chatWallpaper', 'keywords', 'about', 'isSilentMode', 'isRoutineNotificationMute', 'isEmergencyNotificationMute','isUrgentNotificationMute', 'taskAlertTimer' ],
-        "admin" : ["id", "name","firstName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "companyName", "fontSize", "mainDesignation", 'lastSeen', 'extension', 'chatWallpaper', 'keywords', 'about', 'isSilentMode', 'isRoutineNotificationMute', 'isEmergencyNotificationMute','isUrgentNotificationMute',  'taskAlertTimer' ]
+    PERMISSION_TO_DISPLAY: ["superAdmin", "admin"],
+    USER_FIELDS: ["id", "fullName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "mainDesignation", "isSilentMode"],
+    USER_FIELDS_FORMAT: {
+        "superAdmin": ["id", "fullName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "mainDesignation", "isSilentMode"],
+        "user": ["id", "fullName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "mainDesignation", "isSilentMode"],
+        "admin": ["id", "fullName", "lastName", "email", "role", "isEmailVerified", "profilePicture", "isDeleted", "lastSeen", "profileStatus", "isActive", "phone", "address", "createdAt", "updatedAt", "mainDesignation", "isSilentMode"]
     },
     TEMP_PASSWORD: "123123123",
-
 })

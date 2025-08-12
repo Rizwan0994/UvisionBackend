@@ -8,7 +8,7 @@ module.exports = io => {
   require("./middleware")(io, connectedUsers);
   io.on('connection',async socket => {
     require("./privateChat")(io, socket);  
-    require("./user")(io, socket);
+    // require("./user")(io, socket);
     require("./chat")(io, socket)
     require("./designations")(io, socket)
     require("./version")(io, socket)

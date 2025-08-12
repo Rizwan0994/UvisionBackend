@@ -43,7 +43,7 @@ router.use('/subscription', require("./subscription.routes"));
 router.use('/cron', require("./cron.routes"));
 
 // Middleware for JWT validation and Excel download log
-// router.use(jwtValidation);
+router.use(jwtValidation);
 router.use(excelDownloadLog);
 router.use('/user', require("./user.routes"));
 router.use('/profile', require("./profile.routes"));

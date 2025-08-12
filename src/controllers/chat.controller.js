@@ -34,12 +34,12 @@ exports.createChat = async (data) => {
             users: data.users,
             name: data.name || null,
             image: data.image || null,
-            createdBy: data.loginUser.id,
+            createdBy: data.loginUser.id|| null,
             type: data.type
         }
         if (data.type === CHAT_TYPE.GROUP) {
             const insertedData = await ChatModel.create(obj);
-           // console.log('insertedData :>> ', insertedData);
+           console.log('insertedData :>> ', insertedData);
             let userArray = [];
             for (let singleUser of obj.users) {
                 if (data.loginUser.id === singleUser) {
@@ -48,13 +48,13 @@ exports.createChat = async (data) => {
                     userArray.push({ chatId: insertedData.dataValues.id, userId: singleUser });
                 }
             }
-            if(checkGhostUser && checkGhostUser.length){
-                for(let singleGhostUser of checkGhostUser){
-                    if(!obj.users.includes(singleGhostUser.dataValues.id)){
-                        userArray.push({ chatId: insertedData.dataValues.id, userId: singleGhostUser.dataValues.id, isGhostChat: true })
-                    }
-                }
-            }
+            // if(checkGhostUser && checkGhostUser.length){
+            //     for(let singleGhostUser of checkGhostUser){
+            //         if(!obj.users.includes(singleGhostUser.dataValues.id)){
+            //             userArray.push({ chatId: insertedData.dataValues.id, userId: singleGhostUser.dataValues.id, isGhostChat: true })
+            //         }
+            //     }
+            // }
             const message = await MessageModel.create({ type: MESSAGE_TYPE.CHAT_LOG, chatId: insertedData.id, message: '', sendBy: data.loginUser.id })
             await ChatLogs.create({ createdBy: data.loginUser.id, userId: null, chatId: insertedData.id, messageId: message.id, type: CHAT_LOGS.CHAT_CREATED });
             await ChatUsersModel.bulkCreate(userArray);
@@ -71,20 +71,20 @@ exports.createChat = async (data) => {
                 for (let singleUser of obj.users) {
                     userArray.push({ chatId: insertedData.dataValues.id, userId: singleUser });
                 }
-                if(checkGhostUser && checkGhostUser.length){
-                    for(let singleGhostUser of checkGhostUser){
-                        if(!obj.users.includes(singleGhostUser.dataValues.id)){
-                            userArray.push({ chatId: insertedData.dataValues.id, userId: singleGhostUser.dataValues.id, isGhostChat: true })
-                        }
-                    }
-                }
+                // if(checkGhostUser && checkGhostUser.length){
+                //     for(let singleGhostUser of checkGhostUser){
+                //         if(!obj.users.includes(singleGhostUser.dataValues.id)){
+                //             userArray.push({ chatId: insertedData.dataValues.id, userId: singleGhostUser.dataValues.id, isGhostChat: true })
+                //         }
+                //     }
+                // }
                 await ChatUsersModel.bulkCreate(userArray);
                 return insertedData;
             }
         }
     } catch (error) {
         console.log('error :>> ', error);
-        throw new createError["BadRequest"]("Something went wrong");
+        throw error; // Re-throw the error instead of swallowing it
     }
 }
 
@@ -117,7 +117,7 @@ exports.list = async (dataToList, loginUser) => {
         if (dataToList.query && dataToList.query.hasOwnProperty('search') && dataToList.query.search.length) {
             let search = dataToList.query.search.length ? dataToList.query.search.map(ele => `%${ele?.trim()}%`) : [];
             let searchQuery = search.map(field => {
-                return { name: { [Op.iLike]: field } };
+                return { fullName: { [Op.iLike]: field } };
             });
             let userList = await UserModel.findAll({
                 where: {
@@ -260,7 +260,7 @@ exports.singleChat = async (data) => {
                         include: [
                             {
                                 model: UserModel,
-                                attributes: ['id', 'name', 'profilePicture', 'profileStatus', 'lastSeen']
+                                attributes: ['id', 'fullName', 'profilePicture', 'profileStatus', 'lastSeen']
                             }
                         ],
                     },
@@ -273,7 +273,7 @@ exports.singleChat = async (data) => {
                         include: [
                             {
                                 model: UserModel,
-                                attributes: ['id', 'name',],
+                                attributes: ['id', 'fullName',],
                                 // include :[{
                                 //     model: UserDesignationsModel,
                                 //     attributes :['designationId','priority'],
@@ -326,7 +326,7 @@ exports.getLastMessageFromChatId = async (data) => {
                         include: [
                             {
                                 model: UserModel,
-                                attributes: ['id', 'name',],
+                                attributes: ['id', 'fullName',],
                                 as: 'sendByDetail'
                             }
                         ],
