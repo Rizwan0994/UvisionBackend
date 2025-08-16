@@ -41,6 +41,11 @@ module.exports = (sequelize) => {
             type: DataTypes.ENUM(['essential', 'advanced', 'premium']),
             allowNull: false
         },
+        billingCycle: {
+            type: DataTypes.ENUM(['monthly', 'annual']),
+            allowNull: true,
+            defaultValue: 'monthly'
+        },
         stripePriceId: {
             type: DataTypes.STRING,
             allowNull: false
@@ -56,6 +61,15 @@ module.exports = (sequelize) => {
         cancelAtPeriodEnd: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
+        },
+        isPromotionalPricing: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
+        },
+        promotionalPeriodEnd: {
+            type: DataTypes.DATE,
+            allowNull: true
         },
         isDeleted: {
             type: DataTypes.BOOLEAN,

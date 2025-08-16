@@ -1,6 +1,8 @@
 const {
     category: CategoryModel,
-    Op
+    professionalCategory: ProfessionalCategoryModel, 
+    Op,
+    sequelize
 } = require('../models');
 
 /**
@@ -24,14 +26,40 @@ const getAllCategories = async (data = {}) => {
 
         const offset = (page - 1) * limit;
 
+        // const { count, rows } = await CategoryModel.findAndCountAll({
+        //     where: whereClause,
+        //     attributes: ['id', 'name', 'slug', 'description', 'icon', 'color', 'sortOrder', 'isActive'],
+        //     order: [['sortOrder', 'ASC'], ['name', 'ASC']],
+        //     limit: parseInt(limit),
+        //     offset: parseInt(offset)
+        // });
+
         const { count, rows } = await CategoryModel.findAndCountAll({
             where: whereClause,
-            attributes: ['id', 'name', 'slug', 'description', 'icon', 'color', 'sortOrder', 'isActive'],
+            attributes: [
+                'id',
+                'name',
+                'slug',
+                'description',
+                'icon',
+                'color',
+                'sortOrder',
+                'isActive',
+                // add count of professionals
+                [sequelize.fn('COUNT', sequelize.col('professionalCategories.professionalId')), 'professionalCount']
+            ],
+            include: [
+                {
+                    model: ProfessionalCategoryModel,
+                    attributes: [],
+                }
+            ],
+            group: ['category.id'],
             order: [['sortOrder', 'ASC'], ['name', 'ASC']],
             limit: parseInt(limit),
-            offset: parseInt(offset)
+            offset: parseInt(offset),
+            subQuery: false
         });
-
         return {
             data: {
                 categories: rows,
