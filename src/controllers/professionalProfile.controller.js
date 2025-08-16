@@ -194,6 +194,7 @@ const getProfile = async (professionalId) => {
                     model: ProfessionalServicesModel,
                     as: 'services',
                     attributes: ['id', 'serviceName', 'price','currency'],
+                    where: { isDeleted: false },
                     required: false
                 }
             ]
