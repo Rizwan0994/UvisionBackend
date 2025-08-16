@@ -109,29 +109,59 @@ const handleStripeWebhook = async (req, res) => {
  */
 const handleCheckoutCompleted = async (session) => {
     try {
+        console.log('Processing checkout completed for session:', session.id);
+        console.log('Session metadata:', session.metadata);
+
         const userId = session.metadata.userId;
         const planType = session.metadata.planType;
         const billingCycle = session.metadata.billingCycle;
+        const hasPromotion = session.metadata.hasPromotion === 'true';
+
+        if (!userId || !planType || !billingCycle) {
+            console.error('Missing required metadata:', { userId, planType, billingCycle });
+            throw new Error('Missing required session metadata');
+        }
+
+        // Get the full session with line items
+        const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+            expand: ['line_items', 'subscription']
+        });
+
+        console.log('Full session retrieved with line items');
+
+        // Calculate current period end based on promotional status
+        let currentPeriodEnd;
+        if (billingCycle === 'annual') {
+            currentPeriodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+        } else {
+            currentPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        }
 
         // Create or update subscription in database
-        await SubscriptionModel.upsert({
-            userId: userId,
+        const subscriptionData = {
+            userId: parseInt(userId),
             stripeCustomerId: session.customer,
             stripeSubscriptionId: session.subscription,
             status: 'active',
             plan: planType,
-            stripePriceId: session.line_items?.data[0]?.price?.id || '',
+            billingCycle: billingCycle,
+            stripePriceId: fullSession.line_items?.data[0]?.price?.id || '',
             currentPeriodStart: new Date(),
-            currentPeriodEnd: billingCycle === 'annual' 
-                ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) 
-                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            currentPeriodEnd: currentPeriodEnd,
             cancelAtPeriodEnd: false,
-            isDeleted: false
-        });
+            isDeleted: false,
+            // Track promotional information
+            isPromotionalPricing: hasPromotion,
+            promotionalPeriodEnd: hasPromotion ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null
+        };
 
-        console.log(`Subscription activated for user ${userId}, plan: ${planType}`);
+        console.log('Creating subscription with data:', subscriptionData);
+
+        await SubscriptionModel.upsert(subscriptionData);
+
+        console.log(`✅ Subscription activated for user ${userId}, plan: ${planType}, promotion: ${hasPromotion}`);
     } catch (error) {
-        console.error('Error handling checkout completed:', error);
+        console.error('❌ Error handling checkout completed:', error);
         throw error;
     }
 };
@@ -192,24 +222,37 @@ const getSubscriptionStatus = async (req, res) => {
                 data: {
                     status: 'inactive',
                     plan: null,
+                    billingCycle: null,
                     startDate: null,
                     endDate: null,
-                    isActive: false
+                    isActive: false,
+                    isPromotionalPricing: false,
+                    promotionalPeriodEnd: null,
+                    isPromotionalPeriodActive: false
                 },
                 message: 'No subscription found'
             };
         }
 
+        // Check if promotional period is still active
+        const isPromotionalPeriodActive = subscription.isPromotionalPricing && 
+                                        subscription.promotionalPeriodEnd && 
+                                        new Date(subscription.promotionalPeriodEnd) > new Date();
+
         return {
             data: {
                 status: subscription.status,
                 plan: subscription.plan,
+                billingCycle: subscription.billingCycle,
                 startDate: subscription.currentPeriodStart,
                 endDate: subscription.currentPeriodEnd,
                 isActive: subscription.status === 'active' && 
                          subscription.currentPeriodEnd && 
                          new Date(subscription.currentPeriodEnd) > new Date(),
-                cancelAtPeriodEnd: subscription.cancelAtPeriodEnd
+                cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+                isPromotionalPricing: subscription.isPromotionalPricing,
+                promotionalPeriodEnd: subscription.promotionalPeriodEnd,
+                isPromotionalPeriodActive: isPromotionalPeriodActive
             },
             message: 'Subscription status retrieved successfully'
         };
@@ -464,11 +507,53 @@ const removePaymentAccount = async (req, res) => {
     }
 };
 
+/**
+ * Manual Subscription Creation (for debugging)
+ */
+const createManualSubscription = async (req, res) => {
+    try {
+        const { userId, planType, billingCycle = 'monthly' } = req.body;
+        
+        if (!userId || !planType) {
+            throw new createError.BadRequest('userId and planType are required');
+        }
+
+        const subscriptionData = {
+            userId: parseInt(userId),
+            stripeCustomerId: `cus_test_${Date.now()}`,
+            stripeSubscriptionId: `sub_test_${Date.now()}`,
+            status: 'active',
+            plan: planType,
+            billingCycle: billingCycle,
+            stripePriceId: 'price_test',
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            cancelAtPeriodEnd: false,
+            isDeleted: false,
+            isPromotionalPricing: true,
+            promotionalPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        };
+
+        console.log('Creating manual subscription:', subscriptionData);
+        
+        const subscription = await SubscriptionModel.create(subscriptionData);
+        
+        return {
+            data: subscription,
+            message: 'Manual subscription created successfully'
+        };
+    } catch (error) {
+        console.error('Error creating manual subscription:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     createSubscriptionCheckout,
     handleStripeWebhook,
     getSubscriptionStatus,
     cancelUserSubscription,
+    createManualSubscription,
     // Payment Management
     createPaymentAccount,
     getPaymentAccountStatus,

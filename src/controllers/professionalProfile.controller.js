@@ -238,7 +238,7 @@ const searchProfessionals = async (data) => {
         minRating,
         maxRate,
         serviceType,
-        categories,
+        categoryIds,
         page = 1,
         limit = 10,
         sortBy = 'rating',
@@ -295,9 +295,9 @@ const searchProfessionals = async (data) => {
         }
 
         // Add category filtering if specified
-        if (categories && categories.length > 0) {
+        if (categoryIds && categoryIds.length > 0) {
             includeOptions[1].where = {
-                id: { [Op.in]: categories }
+                id: { [Op.in]: categoryIds }
             };
             includeOptions[1].required = true;
         } else {

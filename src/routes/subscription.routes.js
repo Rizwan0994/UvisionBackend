@@ -1,10 +1,12 @@
 'use strict';
-const router = require('express').Router();
+const express = require('express');
+const router = express.Router();
 const {
     createSubscriptionCheckout,
     handleStripeWebhook,
     getSubscriptionStatus,
     cancelUserSubscription,
+    createManualSubscription,
     // Payment Management
     createPaymentAccount,
     getPaymentAccountStatus,
@@ -20,8 +22,8 @@ router.post('/create-checkout-session', jwtValidation, catchAsync(async function
     return res.success(data);
 }));
 
-// Stripe Webhook (no auth required)
-router.post('/webhook', catchAsync(async function _stripeWebhook(req, res) {
+// Stripe Webhook (no auth required) - needs raw body for signature verification
+router.post('/webhook', express.raw({ type: 'application/json' }), catchAsync(async function _stripeWebhook(req, res) {
     let data = await handleStripeWebhook(req, res);
     return res.success(data);
 }));
@@ -35,6 +37,12 @@ router.get('/status', jwtValidation, catchAsync(async function _getSubscriptionS
 // Cancel Subscription
 router.post('/cancel', jwtValidation, catchAsync(async function _cancelSubscription(req, res) {
     let data = await cancelUserSubscription(req, res);
+    res.success(data);
+}));
+
+// Manual Subscription Creation (for testing)
+router.post('/create-manual', jwtValidation, catchAsync(async function _createManualSubscription(req, res) {
+    let data = await createManualSubscription(req, res);
     res.success(data);
 }));
 

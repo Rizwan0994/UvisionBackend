@@ -2,21 +2,47 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const SUBSCRIPTION_PLANS = {
   essential: {
-    monthly: { priceId: "price_1RpTqCHaLC1wsFOqIdmnUZGs", amount: 3999 }, // €39.99
-    annual: { priceId: 'price_essential_annual', amount: 47988 }   // €39.99 * 12
+    monthly: { 
+      priceId: "price_1RpTqCHaLC1wsFOqIdmnUZGs", 
+      amount: 3999, // €39.99
+      promotionalPrice: 100, // €1.00 for first month
+      hasPromotion: true
+    },
+    annual: { 
+      priceId: 'price_essential_annual', 
+      amount: 42989, // €429.99 (10% discount from 12 * €39.99)
+      hasPromotion: false
+    }
   },
   advanced: {
-    monthly: { priceId: "price_1RpTqvHaLC1wsFOqQmi1faGX", amount: 7999 }, // €79.99
-    annual: { priceId: 'price_advanced_annual', amount: 95988 }   // €79.99 * 12
+    monthly: { 
+      priceId: "price_1RpTqvHaLC1wsFOqQmi1faGX", 
+      amount: 7999, // €79.99
+      promotionalPrice: 3999, // €39.99 for first month
+      hasPromotion: true
+    },
+    annual: { 
+      priceId: 'price_advanced_annual', 
+      amount: 85989, // €859.99 (10% discount from 12 * €79.99)
+      hasPromotion: false
+    }
   },
   premium: {
-    monthly: { priceId: "price_1RpTu1HaLC1wsFOql0Y22BN0", amount: 14999 }, // €149.99
-    annual: { priceId: 'price_premium_annual', amount: 179988 }   // €149.99 * 12
+    monthly: { 
+      priceId: "price_1RpTu1HaLC1wsFOql0Y22BN0", 
+      amount: 14999, // €149.99
+      hasPromotion: false
+    },
+    annual: { 
+      priceId: 'price_premium_annual', 
+      amount: 161989, // €1619.99 (10% discount from 12 * €149.99)
+      hasPromotion: false
+    }
   }
 };
 
 /**
- * Create Stripe Checkout Session
+ * Create Stripe Checkout Session with Promotional Pricing Support
  */
 const createCheckoutSession = async (planType, billingCycle, customerEmail, userId) => {
   try {
@@ -25,9 +51,11 @@ const createCheckoutSession = async (planType, billingCycle, customerEmail, user
       throw new Error('Invalid plan or billing cycle');
     }
 
-    const priceId = plan[billingCycle].priceId;
+    const planConfig = plan[billingCycle];
+    const priceId = planConfig.priceId;
 
-    const session = await stripe.checkout.sessions.create({
+    // Base session configuration
+    const sessionConfig = {
       payment_method_types: ['card'],
       mode: 'subscription',
       customer_email: customerEmail,
@@ -40,15 +68,68 @@ const createCheckoutSession = async (planType, billingCycle, customerEmail, user
       metadata: {
         userId: userId.toString(),
         planType,
-        billingCycle
+        billingCycle,
+        hasPromotion: planConfig.hasPromotion ? 'true' : 'false'
       },
       success_url: `${process.env.FRONTEND_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/subscription/cancel`,
-    });
+    };
 
+    // Handle promotional pricing for monthly plans with offers
+    if (billingCycle === 'monthly' && planConfig.hasPromotion) {
+      // Apply discount coupon for first month promotional pricing
+      const couponId = await getOrCreatePromotionalCoupon(planType, planConfig.promotionalPrice, planConfig.amount);
+      
+      sessionConfig.discounts = [
+        {
+          coupon: couponId
+        }
+      ];
+
+      // Add promotional metadata
+      sessionConfig.metadata.promotional_price = planConfig.promotionalPrice.toString();
+      sessionConfig.metadata.regular_price = planConfig.amount.toString();
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
     return session;
   } catch (error) {
     console.error('Error creating checkout session:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get or Create Promotional Coupon for First Month Discount
+ */
+const getOrCreatePromotionalCoupon = async (planType, promotionalPrice, regularPrice) => {
+  try {
+    const couponId = `promo-${planType}-first-month`;
+    
+    try {
+      // Try to retrieve existing coupon
+      const existingCoupon = await stripe.coupons.retrieve(couponId);
+      return existingCoupon.id;
+    } catch (error) {
+      // Coupon doesn't exist, create it
+      if (error.code === 'resource_missing') {
+        const discountAmount = regularPrice - promotionalPrice;
+        
+        const coupon = await stripe.coupons.create({
+          id: couponId,
+          name: `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan - First Month Offer`,
+          amount_off: discountAmount,
+          currency: 'eur',
+          duration: 'once', // Only applies to first payment
+          max_redemptions: 10000 // High limit for promotional use
+        });
+        
+        return coupon.id;
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error handling promotional coupon:', error);
     throw error;
   }
 };

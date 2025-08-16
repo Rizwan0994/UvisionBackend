@@ -30,6 +30,10 @@ module.exports = (sequelize) => {
             allowNull: false,
             comment: 'Name of the service'
         },
+        duration: {
+            type: DataTypes.INTEGER, 
+            allowNull: false,
+        },
         // serviceType: {
         //     type: DataTypes.STRING,
         //     allowNull: true,
