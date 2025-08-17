@@ -12,11 +12,13 @@ const bcrypt = require("bcryptjs");
 const { PROFILE_STATUS, LOGS } = require("../constants/user.constant");
 const { removeFCMToken } = require("./FCMToken.controller");
 const { generateMasterPassword } = require("../helpers/common");
+const { getPermissionsByPlan } = require("../services/permission.service");
 const {
     user: UserModel,
     roles: RoleModel,
     userLogs: UserLogs,
     professionalProfile: ProfessionalProfileModel,
+    subscription: SubscriptionModel,
     Op
 } = require("../models/index");
 const createError = require('http-errors');
@@ -232,9 +234,83 @@ exports.verfiyToken = async (token) => {
     
             }
         }
+
+        // Get user subscription and permissions - only for professionals
+        let subscription = null;
+        let permissions = null;
+        
+        // Only fetch subscription data for professional users
+        if (findUser?.dataValues?.roleData?.name === 'professional') {
+            try {
+                subscription = await SubscriptionModel.findOne({
+                    where: { userId: data.id, isDeleted: false }
+                });
+
+                if (subscription) {
+                    const isPromotionalPeriodActive = subscription.isPromotionalPricing && 
+                                                    subscription.promotionalPeriodEnd && 
+                                                    new Date(subscription.promotionalPeriodEnd) > new Date();
+
+                    subscription = {
+                        status: subscription.status,
+                        plan: subscription.plan,
+                        billingCycle: subscription.billingCycle,
+                        startDate: subscription.currentPeriodStart,
+                        endDate: subscription.currentPeriodEnd,
+                        isActive: subscription.status === 'active' && 
+                                 subscription.currentPeriodEnd && 
+                                 new Date(subscription.currentPeriodEnd) > new Date(),
+                        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+                        isPromotionalPricing: subscription.isPromotionalPricing,
+                        promotionalPeriodEnd: subscription.promotionalPeriodEnd,
+                        isPromotionalPeriodActive: isPromotionalPeriodActive,
+                        stripeSubscriptionId: subscription.stripeSubscriptionId // Add this for cancellation
+                    };
+
+                    permissions = getPermissionsByPlan(subscription.plan, subscription.status);
+                } else {
+                    subscription = {
+                        status: 'inactive',
+                        plan: null,
+                        billingCycle: null,
+                        startDate: null,
+                        endDate: null,
+                        isActive: false,
+                        cancelAtPeriodEnd: false,
+                        isPromotionalPricing: false,
+                        promotionalPeriodEnd: null,
+                        isPromotionalPeriodActive: false
+                    };
+
+                    permissions = getPermissionsByPlan(null, 'inactive');
+                }
+            } catch (subscriptionError) {
+                console.error('Error fetching subscription:', subscriptionError);
+                subscription = {
+                    status: 'inactive',
+                    plan: null,
+                    billingCycle: null,
+                    startDate: null,
+                    endDate: null,
+                    isActive: false,
+                    cancelAtPeriodEnd: false,
+                    isPromotionalPricing: false,
+                    promotionalPeriodEnd: null,
+                    isPromotionalPeriodActive: false
+                };
+                permissions = getPermissionsByPlan(null, 'inactive');
+            }
+        } else {
+            // For non-professional users, set null subscription and no permissions
+            subscription = null;
+            permissions = null;
+        }
+
         return {
             data: {
-                user: {...findUser?.dataValues}
+                user: {...findUser?.dataValues},
+                subscription: subscription,
+                permissions: permissions
             }, 
             message: "Token Valid." 
         };
