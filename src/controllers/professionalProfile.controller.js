@@ -5,6 +5,7 @@ const {
     professionalCategory: ProfessionalCategoryModel,
     professionalPortfolio: ProfessionalPortfolioModel,
     professionalServices: ProfessionalServicesModel,
+    professionalReviews: ProfessionalReviewsModel,
     Op
 } = require('../models');
 const ProfessionalMetricsService = require('../services/professionalMetrics.service');
@@ -196,6 +197,12 @@ const getProfile = async (professionalId) => {
                     attributes: ['id','duration','serviceName', 'price','currency'],
                     where: { isDeleted: false },
                     required: false
+                },
+                //add review
+                {
+                    model: ProfessionalReviewsModel,
+                    as: 'reviews',
+                    attributes: ['id', 'rating', 'comment', 'createdAt'],
                 }
             ]
         });
