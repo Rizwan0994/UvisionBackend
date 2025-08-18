@@ -42,7 +42,7 @@ exports.createReview = async (data, loginUser) => {
         });
 
         if (!booking) {
-            throw new createError["NotFound"]("Booking not found or not eligible for review");
+            throw new createError["NotFound"]("Not eligible for review. Please wait for the booking to be completed and paid.");
         }
 
         // Check if review already exists
