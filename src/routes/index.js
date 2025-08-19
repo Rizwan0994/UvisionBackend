@@ -6,6 +6,8 @@
 const router = require('express').Router();
 const { queryGenerator } = require("../util/dbServices");
 const { jwtValidation, excelDownloadLog } = require('../middleware/authentication');
+const { trackProfileView } = require('../controllers/analytics.controller');
+const { catchAsync } = require('../util/catchAsync');
 
 // Route for executing a generic query
 router.post('/query', async function(req,res){
@@ -42,6 +44,12 @@ router.use('/subscription', require("./subscription.routes"));
 // Cron routes
 router.use('/cron', require("./cron.routes"));
 
+
+router.post('/analytics/profile-view/:professionalId', catchAsync(async function _trackProfileView(req, res) {
+    let data = await trackProfileView(req, res);
+    return data;
+}));
+
 // Middleware for JWT validation and Excel download log
 router.use(jwtValidation);
 router.use(excelDownloadLog);
@@ -62,4 +70,5 @@ router.use('/designationGroup', require("./designationGroup.routes"));
 router.use('/professional-dashboard', require("./professional.routes"));
 router.use('/booking', require("./booking.routes"));
 router.use('/reviews', require("./review.routes"));
+router.use('/analytics', require("./analytics.routes"));
 module.exports = router;
