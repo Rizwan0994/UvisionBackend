@@ -65,7 +65,7 @@ module.exports = (sequelize) => {
         platformFee: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
-            comment: 'Platform fee (10% of total booking)'
+            comment: 'Platform fee (currently 0% - full amount goes to professional)'
         },
         professionalAmount: {
             type: DataTypes.DECIMAL(10, 2),

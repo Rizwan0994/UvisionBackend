@@ -550,7 +550,8 @@ exports.processUpfrontPayment = async (data, loginUser) => {
             totalAmount: booking.totalAmount,
             professionalStripeAccountId: booking.professional.stripeConnectAccountId,
             bookingId: booking.id,
-            clientId: loginUser.id
+            clientId: loginUser.id,
+            currency: booking.currency
         }, client.email);
 
         // Store payment record
@@ -562,8 +563,8 @@ exports.processUpfrontPayment = async (data, loginUser) => {
             stripeAccountId: booking.professional.stripeConnectAccountId,
             paymentType: 'upfront_30',
             amount: calculatedAmounts.upfrontAmount,
-            platformFee: calculatedAmounts.platformFee * 0.30, // 30% of platform fee
-            professionalAmount: calculatedAmounts.professionalUpfront,
+            platformFee: 0, // No platform fee
+            professionalAmount: calculatedAmounts.upfrontAmount, // Professional gets full amount
             currency: 'EUR',
             status: paymentIntent.status
         });
@@ -714,7 +715,7 @@ exports.confirmUpfrontPayment = async (data, loginUser) => {
                         totalAmount: parseFloat(completeBooking.totalAmount).toFixed(2),
                         upfrontAmount: amounts.upfrontAmount,
                         remainingAmount: amounts.remainingAmount,
-                        platformFee: amounts.platformFee,
+                        platformFee: 0, // No platform fee
                         confirmationCode: confirmationCode,
                         frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
                     }
@@ -788,18 +789,25 @@ exports.processRemainingPayment = async (data, bookingId) => {
         // Get payment method from original payment intent
         const originalIntent = await stripeService.getPaymentIntentDetails(upfrontPayment.stripePaymentIntentId);
         const paymentMethodId = originalIntent.payment_method;
+        
+        console.log(`Original PaymentIntent: ${upfrontPayment.stripePaymentIntentId}`);
+        console.log(`Original PaymentMethod: ${paymentMethodId}`);
+        console.log(`Original Customer: ${originalIntent.customer}`);
 
         // Get client details
         const client = await UserModel.findOne({
             where: { id: booking.clientId }
         });
+        
+        console.log(`Client email: ${client.email}`);
 
         // Create remaining payment intent
         const { paymentIntent, amounts } = await stripeService.createRemainingPaymentIntent({
             totalAmount: booking.totalAmount,
             professionalStripeAccountId: booking.professional.stripeConnectAccountId,
             bookingId: booking.id,
-            clientId: booking.clientId
+            clientId: booking.clientId,
+            currency: booking.currency
         }, client.email, paymentMethodId);
 
         // Capture the remaining payment immediately
@@ -814,8 +822,8 @@ exports.processRemainingPayment = async (data, bookingId) => {
             stripeAccountId: booking.professional.stripeConnectAccountId,
             paymentType: 'remaining_70',
             amount: amounts.remainingAmount,
-            platformFee: amounts.platformFee * 0.70, // 70% of platform fee
-            professionalAmount: amounts.professionalRemaining,
+            platformFee: 0, // No platform fee
+            professionalAmount: amounts.remainingAmount, // Professional gets full amount
             currency: 'EUR',
             status: capturedIntent.status,
             capturedAt: new Date(),
@@ -864,6 +872,100 @@ exports.processRemainingPayment = async (data, bookingId) => {
             throw new createError["BadRequest"](`Payment processing error: ${error.message}. Please contact support if the issue persists.`);
         }
         
+        throw error;
+    }
+};
+
+/**
+ * Complete remaining payment after setup intent is confirmed
+ */
+exports.completeRemainingPaymentSetup = async (data, bookingId) => {
+    try {
+        const { setupIntentId } = data;
+        
+        console.log("Completing remaining payment setup for booking:", bookingId, "with setup intent:", setupIntentId);
+
+        // Retrieve the setup intent to get the payment method
+        const setupIntent = await stripeService.getSetupIntentDetails(setupIntentId);
+        
+        if (setupIntent.status !== 'succeeded') {
+            throw new createError["BadRequest"]("Setup intent not completed successfully");
+        }
+
+        // Find booking 
+        const booking = await ProfessionalBookingsModel.findOne({
+            where: { 
+                id: bookingId,
+                status: 'confirmed',
+                paymentStatus: 'partial'
+            },
+            include: [
+                {
+                    model: ProfessionalProfileModel,
+                    as: 'professional'
+                }
+            ]
+        });
+
+        if (!booking) {
+            throw new createError["NotFound"]("Booking not found");
+        }
+
+        // Get client details
+        const client = await UserModel.findOne({
+            where: { id: booking.clientId }
+        });
+
+        // Create remaining payment intent with the new payment method
+        const { paymentIntent, amounts } = await stripeService.createRemainingPaymentIntent({
+            totalAmount: booking.totalAmount,
+            professionalStripeAccountId: booking.professional.stripeConnectAccountId,
+            bookingId: booking.id,
+            clientId: booking.clientId
+        }, client.email, setupIntent.payment_method);
+
+        // Capture the remaining payment immediately
+        const capturedIntent = await stripeService.captureRemainingPayment(paymentIntent.id);
+
+        // Store remaining payment record
+        const remainingPaymentRecord = await BookingPaymentsModel.create({
+            bookingId: booking.id,
+            clientId: booking.clientId,
+            professionalId: booking.professionalId,
+            stripePaymentIntentId: capturedIntent.id,
+            stripeAccountId: booking.professional.stripeConnectAccountId,
+            paymentType: 'remaining_70',
+            amount: amounts.remainingAmount,
+            platformFee: 0, // No platform fee
+            professionalAmount: amounts.remainingAmount, // Professional gets full amount
+            currency: 'EUR',
+            status: capturedIntent.status,
+            capturedAt: new Date(),
+            metadata: capturedIntent
+        });
+
+        // Update booking status to completed
+        await booking.update({
+            status: 'completed',
+            paymentStatus: 'paid',
+            completionDate: new Date(),
+            confirmationCode: null // Clear confirmation code after use
+        });
+
+        return {
+            data: {
+                booking: {
+                    id: booking.id,
+                    status: 'completed',
+                    paymentStatus: 'paid'
+                },
+                paymentAmount: amounts.remainingAmount,
+                totalPaid: parseFloat(booking.totalAmount)
+            },
+            message: "Remaining payment completed successfully"
+        };
+    } catch (error) {
+        console.error('Error completing remaining payment setup:', error);
         throw error;
     }
 };

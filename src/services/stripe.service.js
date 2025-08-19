@@ -298,10 +298,10 @@ const calculateBookingAmounts = (totalAmount) => {
   const total = parseFloat(totalAmount);
   const upfrontAmount = total * 0.30; // 30% upfront
   const remainingAmount = total * 0.70; // 70% remaining
-  const platformFee = total * 0.10; // 10% platform fee
-  const professionalTotal = total - platformFee; // 90% to professional
-  const professionalUpfront = upfrontAmount - (platformFee * 0.30); // Professional's share of upfront
-  const professionalRemaining = remainingAmount - (platformFee * 0.70); // Professional's share of remaining
+  const platformFee = 0; // No platform fee - full amount goes to professional
+  const professionalTotal = total; // 100% to professional
+  const professionalUpfront = upfrontAmount; // Professional gets full upfront amount
+  const professionalRemaining = remainingAmount; // Professional gets full remaining amount
 
   return {
     totalAmount: total,
@@ -319,7 +319,7 @@ const calculateBookingAmounts = (totalAmount) => {
  */
 const createBookingPaymentIntent = async (bookingData, clientEmail) => {
   try {
-    const { totalAmount, professionalStripeAccountId, bookingId, clientId } = bookingData;
+    const { totalAmount, professionalStripeAccountId, bookingId, clientId, currency } = bookingData;
     const amounts = calculateBookingAmounts(totalAmount);
 
     // Find or create customer
@@ -334,7 +334,12 @@ const createBookingPaymentIntent = async (bookingData, clientEmail) => {
       customer: customer.id,
       payment_method_types: ['card'],
       capture_method: 'manual', // Manual capture for better control
-      application_fee_amount: Math.round(amounts.platformFee * 0.30 * 100), // 30% of platform fee
+      setup_future_usage: 'off_session', // This ensures PaymentMethod is saved for future use
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never'
+      },
+      // No application_fee_amount - full amount goes to professional
       transfer_data: {
         destination: professionalStripeAccountId,
       },
@@ -347,7 +352,7 @@ const createBookingPaymentIntent = async (bookingData, clientEmail) => {
         upfront_amount: amounts.upfrontAmount.toString(),
         platform_fee: amounts.platformFee.toString()
       },
-      description: `Booking upfront payment - 30% of €${totalAmount}`
+      description: `Booking upfront payment - 30% of EUR${totalAmount}`
     });
 
     return {
@@ -365,36 +370,47 @@ const createBookingPaymentIntent = async (bookingData, clientEmail) => {
  */
 const createRemainingPaymentIntent = async (bookingData, clientEmail, originalPaymentMethodId) => {
   try {
-    const { totalAmount, professionalStripeAccountId, bookingId, clientId } = bookingData;
+    const { totalAmount, professionalStripeAccountId, bookingId, clientId, currency } = bookingData;
     const amounts = calculateBookingAmounts(totalAmount);
 
     // Find or create customer
+    console.log(`Looking for customer with email: ${clientEmail}`);
     let customer = await getCustomerByEmail(clientEmail);
     if (!customer) {
+      console.log(`Customer not found, creating new customer for email: ${clientEmail}`);
       customer = await createCustomer(clientEmail, clientEmail.split('@')[0]);
+      console.log(`Created new customer: ${customer.id}`);
+    } else {
+      console.log(`Found existing customer: ${customer.id}`);
     }
 
-    // CRITICAL FIX: Get the customer's attached PaymentMethods instead of reusing the original
+    // Find the customer's attached PaymentMethods
     let paymentMethodToUse = null;
     
     try {
-      // First, try to find if the original PaymentMethod is attached to this customer
+      console.log(`Looking for PaymentMethods for customer: ${customer.id}`);
+      console.log(`Original PaymentMethod ID: ${originalPaymentMethodId}`);
+      
       const attachedPaymentMethods = await stripe.paymentMethods.list({
         customer: customer.id,
         type: 'card',
       });
       
+      console.log(`Found ${attachedPaymentMethods.data.length} attached PaymentMethods for customer`);
+      
       // Look for the original payment method in attached methods
       paymentMethodToUse = attachedPaymentMethods.data.find(pm => pm.id === originalPaymentMethodId);
       
-      if (!paymentMethodToUse && attachedPaymentMethods.data.length > 0) {
-        // If original not found but other methods exist, use the most recent one
+      if (paymentMethodToUse) {
+        console.log(`Found original PaymentMethod ${originalPaymentMethodId} attached to customer`);
+      } else if (attachedPaymentMethods.data.length > 0) {
+        // Use the most recent one if original not found
         paymentMethodToUse = attachedPaymentMethods.data[0];
         console.log(`Using most recent attached PaymentMethod: ${paymentMethodToUse.id}`);
       }
       
       if (!paymentMethodToUse) {
-        throw new Error('No payment method attached to customer. Customer must complete payment setup first.');
+        throw new Error('No payment method attached to customer. Please contact support.');
       }
       
     } catch (pmError) {
@@ -407,9 +423,12 @@ const createRemainingPaymentIntent = async (bookingData, clientEmail, originalPa
       currency: 'eur',
       customer: customer.id,
       payment_method: paymentMethodToUse.id,
-      confirmation_method: 'manual',
       capture_method: 'manual',
-      application_fee_amount: Math.round(amounts.platformFee * 0.70 * 100), // 70% of platform fee
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never'
+      },
+      // No application_fee_amount - full amount goes to professional
       transfer_data: {
         destination: professionalStripeAccountId,
       },
@@ -423,7 +442,7 @@ const createRemainingPaymentIntent = async (bookingData, clientEmail, originalPa
         platform_fee_remaining: (amounts.platformFee * 0.70).toString(),
         original_payment_method_id: originalPaymentMethodId
       },
-      description: `Booking remaining payment - 70% of €${totalAmount}`
+      description: `Booking remaining payment - 70% of EUR${totalAmount}`
     });
 
     return {
@@ -496,7 +515,7 @@ const confirmAndCaptureUpfrontPayment = async (paymentIntentId) => {
         throw new Error(`Unexpected PaymentIntent status: ${paymentIntent.status}`);
     }
     
-    // CRITICAL FIX: If payment succeeded, attach PaymentMethod to Customer for future use
+    // If payment succeeded, try to attach PaymentMethod to Customer for future use
     if (paymentIntent.status === 'succeeded' && paymentIntent.payment_method && paymentIntent.customer) {
       try {
         console.log('Attaching PaymentMethod to Customer for future payments...');
@@ -505,8 +524,8 @@ const confirmAndCaptureUpfrontPayment = async (paymentIntentId) => {
         });
         console.log(`PaymentMethod ${paymentIntent.payment_method} attached to Customer ${paymentIntent.customer}`);
       } catch (attachError) {
-        // Don't fail the payment if attachment fails, just log it
-        console.error('Warning: Could not attach PaymentMethod to Customer:', attachError.message);
+        // Don't fail the payment if attachment fails
+        console.log('PaymentMethod attachment info:', attachError.message);
       }
     }
     
@@ -648,6 +667,19 @@ const getPaymentIntentDetails = async (paymentIntentId) => {
 };
 
 /**
+ * Get setup intent details
+ */
+const getSetupIntentDetails = async (setupIntentId) => {
+  try {
+    const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+    return setupIntent;
+  } catch (error) {
+    console.error('Error retrieving setup intent:', error);
+    throw error;
+  }
+};
+
+/**
  * Process refund for booking payment
  */
 const processBookingRefund = async (paymentIntentId, refundAmount, reason = 'requested_by_customer') => {
@@ -688,6 +720,7 @@ module.exports = {
   captureRemainingPayment,
   cancelPaymentIntent,
   getPaymentIntentDetails,
+  getSetupIntentDetails,
   ensurePaymentMethodAttached,
   processBookingRefund,
   SUBSCRIPTION_PLANS
