@@ -22,12 +22,6 @@ router.post('/create-checkout-session', jwtValidation, catchAsync(async function
     return res.success(data);
 }));
 
-// Stripe Webhook (no auth required) - needs raw body for signature verification
-router.post('/webhook', express.raw({ type: 'application/json' }), catchAsync(async function _stripeWebhook(req, res) {
-    let data = await handleStripeWebhook(req, res);
-    return res.success(data);
-}));
-
 // Get User Subscription Status
 router.get('/status', jwtValidation, catchAsync(async function _getSubscriptionStatus(req, res) {
     let data = await getSubscriptionStatus(req, res);
