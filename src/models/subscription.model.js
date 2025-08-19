@@ -79,17 +79,16 @@ module.exports = (sequelize) => {
         sequelize,
         modelName: 'subscription',
         tableName: 'subscriptions',
-        timestamps: true,
-        indexes: [
-            {
-                unique: true,
-                fields: ['userId'],
-                where: {
-                    isDeleted: false
-                },
-                name: 'unique_active_user_subscription' 
-            }
-        ]
+        timestamps: true
+        // indexes: [
+        //     {
+        //         unique: true,
+        //         fields: ['userId', 'isDeleted'],
+        //         where: {
+        //             isDeleted: false
+        //         }
+        //     }
+        // ]
     });
 
     return Subscription;

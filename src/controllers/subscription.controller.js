@@ -155,8 +155,21 @@ const handleCheckoutCompleted = async (session) => {
             promotionalPeriodEnd: hasPromotion ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null
         };
 
-        // Use upsert - now works because Sequelize knows about the unique index
-        const [subscription, created] = await SubscriptionModel.upsert(subscriptionData);
+        console.log('Creating subscription with data:', subscriptionData);
+
+        // Use findOrCreate + update approach (production-ready and reliable)
+        const [subscription, created] = await SubscriptionModel.findOrCreate({
+            where: { 
+                userId: parseInt(userId),
+                isDeleted: false 
+            },
+            defaults: subscriptionData
+        });
+
+        // If subscription already exists, update it with new data
+        if (!created) {
+            await subscription.update(subscriptionData);
+        }
 
         console.log(`✅ Subscription ${created ? 'created' : 'updated'} for user ${userId}, plan: ${planType}, promotion: ${hasPromotion}`);
     } catch (error) {
