@@ -23,6 +23,14 @@ app.use(require("compression")())
 app.use(require("./util/response/responseHandler"));
 app.use(require("./middleware/cacheControl"));
 app.use(require("./middleware/decryptResponse"));
+
+// Stripe webhook route - must be before JSON parsing middleware
+app.post('/subscription/webhook', express.raw({ type: 'application/json' }), require("./util/catchAsync").catchAsync(async function _stripeWebhook(req, res) {
+    const { handleStripeWebhook } = require('./controllers/subscription.controller');
+    let data = await handleStripeWebhook(req, res);
+    return res.success(data);
+}));
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(require("express-fileupload")());
