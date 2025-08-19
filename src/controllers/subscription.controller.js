@@ -155,11 +155,10 @@ const handleCheckoutCompleted = async (session) => {
             promotionalPeriodEnd: hasPromotion ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null
         };
 
-        console.log('Creating subscription with data:', subscriptionData);
+        // Use upsert - now works because Sequelize knows about the unique index
+        const [subscription, created] = await SubscriptionModel.upsert(subscriptionData);
 
-        await SubscriptionModel.upsert(subscriptionData);
-
-        console.log(`✅ Subscription activated for user ${userId}, plan: ${planType}, promotion: ${hasPromotion}`);
+        console.log(`✅ Subscription ${created ? 'created' : 'updated'} for user ${userId}, plan: ${planType}, promotion: ${hasPromotion}`);
     } catch (error) {
         console.error('❌ Error handling checkout completed:', error);
         throw error;

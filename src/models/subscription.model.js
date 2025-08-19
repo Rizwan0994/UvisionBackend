@@ -83,10 +83,11 @@ module.exports = (sequelize) => {
         indexes: [
             {
                 unique: true,
-                fields: ['userId', 'isDeleted'],
+                fields: ['userId'],
                 where: {
                     isDeleted: false
-                }
+                },
+                name: 'unique_active_user_subscription' 
             }
         ]
     });
