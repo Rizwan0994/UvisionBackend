@@ -3,7 +3,6 @@ const express = require('express');
 const router = express.Router();
 const {
     createSubscriptionCheckout,
-    handleStripeWebhook,
     getSubscriptionStatus,
     cancelUserSubscription,
     createManualSubscription,
@@ -19,12 +18,6 @@ const catchAsync = require("../util/catchAsync").catchAsync;
 // Create Stripe Checkout Session
 router.post('/create-checkout-session', jwtValidation, catchAsync(async function _createCheckoutSession(req, res) {
     let data = await createSubscriptionCheckout(req, res);
-    return res.success(data);
-}));
-
-// Stripe Webhook (no auth required) - needs raw body for signature verification
-router.post('/webhook', express.raw({ type: 'application/json' }), catchAsync(async function _stripeWebhook(req, res) {
-    let data = await handleStripeWebhook(req, res);
     return res.success(data);
 }));
 
