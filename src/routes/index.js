@@ -36,8 +36,8 @@ router.use('/contact', require("./contact.routes"));
 // Upload routes (has both public and protected endpoints)
 router.use('/upload', require("./upload.routes"));
 
-// Subscription routes (public webhook, authenticated for others)
-router.use('/subscription', require("./subscription.routes"));
+// Subscription routes (authenticated only - webhook handled separately in app.js)
+router.use('/subscription', require("./subscription-auth.routes"));
 
 // Cron routes
 router.use('/cron', require("./cron.routes"));
