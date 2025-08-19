@@ -13,10 +13,6 @@ const limiter = rateLimit(require("./config/rateLimit"));
 // Test Firebase Notifications
 // require("./services/test-notification");
 app.use(require("morgan")(':remote-addr - :remote-user - [:date[clf]] - ":method :url HTTP/:http-version" - :status - :res[content-length] B -  :response-time ms'))
-
-// Stripe webhook route needs raw body - must be before body parsing middleware
-app.use('/subscription/webhook', express.raw({ type: 'application/json' }), require('./routes/webhook.routes'));
-
 app.use(bodyParser.urlencoded({ limit: "500mb", extended: false }));
 app.use(bodyParser.json({ limit: "500mb" }));
 app.use(bodyParser.text({ limit: "500mb" }));
