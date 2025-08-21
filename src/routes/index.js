@@ -58,6 +58,7 @@ router.use('/profile', require("./profile.routes"));
 router.use('/chat', require("./chat.routes"));
 router.use('/chat/user', require("./chatUser.routes"));
 router.use('/message', require("./message.routes"));
+router.use('/simple-chat', require("./simpleChat.routes"));
 router.use('/note', require("./note.routes"));
 router.use('/fcmtoken', require("./fcmToken.routes"));
 router.use('/log', require('./log.routes'));

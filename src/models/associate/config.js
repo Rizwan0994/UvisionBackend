@@ -16,6 +16,14 @@ exports.userModel = (db) => {
     db.user.belongsTo(db.roles, {foreignKey: "role", sourceKey: 'id', as: 'roleData'});
     db.user.belongsTo(db.companyRole, {foreignKey: "companyRoleId", sourceKey: 'id', as: 'companyRoleData'});
     db.user.hasOne(db.subscription, { foreignKey: 'userId', as: 'subscription'});
+    
+    // Simple Chat System associations
+    db.user.hasMany(db.conversation, { foreignKey: 'clientId', as: 'clientConversations'});
+    db.user.hasMany(db.conversation, { foreignKey: 'professionalId', as: 'professionalConversations'});
+    db.user.hasMany(db.simpleMessage, { foreignKey: 'senderId', as: 'sentMessages'});
+
+    // OTP associations
+    db.user.hasMany(db.otp, { foreignKey: 'userId', as: 'otps'});
 
     db.user.addScope('companyRoleData',{
         include : {
@@ -689,4 +697,107 @@ exports.categoryModel = (db) => {
 exports.professionalCategoryModel = (db) => {
     db.professionalCategory.belongsTo(db.professionalProfile, { foreignKey: 'professionalId', as: 'professional' });
     db.professionalCategory.belongsTo(db.category, { foreignKey: 'categoryId', as: 'category' });
+};
+
+// Conversation model associations (Simple Chat System)
+exports.conversationModel = (db) => {
+    // A conversation has many simple messages
+    db.conversation.hasMany(db.simpleMessage, {
+        foreignKey: 'conversationId',
+        as: 'messages'
+    });
+    
+    // A conversation belongs to two users (client and professional)
+    db.conversation.belongsTo(db.user, {
+        foreignKey: 'clientId',
+        as: 'client'
+    });
+    
+    db.conversation.belongsTo(db.user, {
+        foreignKey: 'professionalId', 
+        as: 'professional'
+    });
+
+    // Add scopes for conversation queries
+    db.conversation.addScope('active', {
+        where: { isActive: true }
+    });
+
+    db.conversation.addScope('withUsers', {
+        include: [
+            {
+                model: db.user,
+                as: 'client',
+                attributes: ['id', 'fullName', 'profilePicture']
+            },
+            {
+                model: db.user,
+                as: 'professional',
+                attributes: ['id', 'fullName', 'profilePicture']
+            }
+        ]
+    });
+
+    db.conversation.addScope('withLastMessage', {
+        include: [
+            {
+                model: db.simpleMessage,
+                as: 'messages',
+                limit: 1,
+                order: [['createdAt', 'DESC']],
+                include: [
+                    {
+                        model: db.user,
+                        as: 'sender',
+                        attributes: ['id', 'fullName']
+                    }
+                ]
+            }
+        ]
+    });
+};
+
+// Simple Message model associations (Simple Chat System)
+exports.simpleMessageModel = (db) => {
+    // A message belongs to a conversation
+    db.simpleMessage.belongsTo(db.conversation, {
+        foreignKey: 'conversationId',
+        as: 'conversation'
+    });
+    
+    // A message belongs to a sender (user)
+    db.simpleMessage.belongsTo(db.user, {
+        foreignKey: 'senderId',
+        as: 'sender'
+    });
+
+    // Add scopes for message queries
+    db.simpleMessage.addScope('withSender', {
+        include: [
+            {
+                model: db.user,
+                as: 'sender',
+                attributes: ['id', 'fullName', 'profilePicture']
+            }
+        ]
+    });
+
+    db.simpleMessage.addScope('withConversation', {
+        include: [
+            {
+                model: db.conversation,
+                as: 'conversation',
+                attributes: ['id', 'clientId', 'professionalId']
+            }
+        ]
+    });
+};
+
+// OTP model associations
+exports.otpModel = (db) => {
+    // OTP belongs to user
+    db.otp.belongsTo(db.user, {
+        foreignKey: 'userId',
+        as: 'user'
+    });
 };

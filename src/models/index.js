@@ -90,8 +90,10 @@ db.bookingPayments = require('./bookingPayment.model')(sequelize);
 db.subscription = require('./subscription.model')(sequelize);
 db.profileView = require('./profileView.model')(sequelize);
 
-
-
+// Simple Chat models
+db.conversation = require('./conversation.model')(sequelize);
+db.simpleMessage = require('./simpleMessage.model')(sequelize);
+db.otp = require('./otp.model')(sequelize);
 
 require("./associate")(db);
 

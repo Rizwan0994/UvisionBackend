@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification - uVision</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 300;
+        }
+        .content {
+            padding: 40px;
+        }
+        .otp-container {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .otp-code {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 8px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .security-tips {
+            background: #e7f3ff;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .security-tips h4 {
+            margin-top: 0;
+            color: #0c5460;
+        }
+        .security-tips ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Email Verification</h1>
+            <p>Welcome to uVision!</p>
+        </div>
+        
+        <div class="content">
+            <h2>Verify Your Email Address</h2>
+            <p>Thank you for joining uVision! To complete your registration and secure your account, please verify your email address.</p>
+            
+            <div class="otp-container">
+                <h3>Your Verification Code</h3>
+                <div class="otp-code"><%= otp %></div>
+                <p><small>Enter this code to verify your email address</small></p>
+            </div>
+            
+            <div class="warning">
+                <strong>⏰ This code will expire in 10 minutes</strong><br>
+                If you don't verify within this time, you'll need to request a new code.
+            </div>
+            
+            <div class="security-tips">
+                <h4>🔒 Security Tips</h4>
+                <ul>
+                    <li>Never share this verification code with anyone</li>
+                    <li>uVision will never ask for your code via phone or email</li>
+                    <li>If you didn't create an account, you can safely ignore this email</li>
+                </ul>
+            </div>
+            
+            <p>Once verified, you'll be able to:</p>
+            <ul>
+                <li>Access your uVision account</li>
+                <li>Connect with creative professionals</li>
+                <li>Manage your bookings and projects</li>
+            </ul>
+            
+            <p>If you have any questions or need help, please don't hesitate to contact our support team.</p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>uVision</strong> - Connecting You with Creative Professionals</p>
+            <p>📧 support@uvision.com | 📞 +1 (555) 123-4567</p>
+            <p><small>This is an automated email. Please do not reply to this email address.</small></p>
+        </div>
+    </div>
+</body>
+</html>

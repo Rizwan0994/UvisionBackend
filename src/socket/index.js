@@ -13,5 +13,8 @@ module.exports = io => {
     require("./designations")(io, socket)
     require("./version")(io, socket)
     require("./auth")(io, socket, connectedUsers)
+    
+    // New simple chat system
+    require("./simpleChat")(io, socket)
   });
 };
