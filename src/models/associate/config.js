@@ -22,6 +22,9 @@ exports.userModel = (db) => {
     db.user.hasMany(db.conversation, { foreignKey: 'professionalId', as: 'professionalConversations'});
     db.user.hasMany(db.simpleMessage, { foreignKey: 'senderId', as: 'sentMessages'});
 
+    // OTP associations
+    db.user.hasMany(db.otp, { foreignKey: 'userId', as: 'otps'});
+
     db.user.addScope('companyRoleData',{
         include : {
             model : db.companyRole,
@@ -787,5 +790,14 @@ exports.simpleMessageModel = (db) => {
                 attributes: ['id', 'clientId', 'professionalId']
             }
         ]
+    });
+};
+
+// OTP model associations
+exports.otpModel = (db) => {
+    // OTP belongs to user
+    db.otp.belongsTo(db.user, {
+        foreignKey: 'userId',
+        as: 'user'
     });
 };
