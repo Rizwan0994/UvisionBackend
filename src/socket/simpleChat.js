@@ -7,8 +7,20 @@ const {
     Op
 } = require('../models/index');
 
+// In-memory store for online users in simple chat
+const onlineUsers = new Set();
+
 module.exports = (io, socket) => {
     console.log('Simple chat socket initialized for user:', socket.handshake.query.loginUser?.id);
+    
+    const userId = socket.handshake.query.loginUser?.id;
+    
+    // Add user to online users and broadcast update
+    if (userId && !onlineUsers.has(userId)) {
+        onlineUsers.add(userId);
+        io.emit('simple-chat:online-users', Array.from(onlineUsers));
+        console.log(`📢 User ${userId} came online. Total online: ${onlineUsers.size}`);
+    }
 
     // Join user to their conversation rooms
     socket.on('simple-chat:join-conversations', async () => {
@@ -40,6 +52,9 @@ module.exports = (io, socket) => {
                 success: true,
                 conversationCount: conversations.length
             });
+
+            // Send current online users to the newly connected user
+            socket.emit('simple-chat:online-users', Array.from(onlineUsers));
 
             console.log(`🎯 User ${userId} successfully joined ${conversations.length} conversation rooms`);
 
@@ -275,6 +290,14 @@ module.exports = (io, socket) => {
 
     // Handle disconnect
     socket.on('disconnect', () => {
-        console.log('Simple chat socket disconnected for user:', socket.handshake.query.loginUser?.id);
+        const userId = socket.handshake.query.loginUser?.id;
+        console.log('Simple chat socket disconnected for user:', userId);
+        
+        // Remove user from online users and broadcast update
+        if (userId && onlineUsers.has(userId)) {
+            onlineUsers.delete(userId);
+            io.emit('simple-chat:online-users', Array.from(onlineUsers));
+            console.log(`📢 User ${userId} went offline. Total online: ${onlineUsers.size}`);
+        }
     });
 };
