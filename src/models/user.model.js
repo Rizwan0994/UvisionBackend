@@ -67,7 +67,7 @@ module.exports = (sequelize) => {
         },
         profilePicture: {
             type: DataTypes.STRING(1000),
-            defaultValue: "https://chatapp-storage-2022.s3.us-west-2.amazonaws.com/user_pic.jpg"
+            defaultValue: "https://uvision-2025.s3.us-east-2.amazonaws.com/profile/2025/08/26/default-avatar-profile-icon-vector-social-media-user-image-182145777.webp"
         },
         isDeleted: {
             type: DataTypes.BOOLEAN,
