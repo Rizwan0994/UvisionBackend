@@ -332,7 +332,6 @@ const createBookingPaymentIntent = async (bookingData, clientEmail) => {
       amount: Math.round(amounts.upfrontAmount * 100), // Convert to cents
       currency: 'eur',
       customer: customer.id,
-      payment_method_types: ['card'],
       capture_method: 'manual', // Manual capture for better control
       setup_future_usage: 'off_session', // This ensures PaymentMethod is saved for future use
       automatic_payment_methods: {
