@@ -7,14 +7,13 @@ module.exports = io => {
   */
   require("./middleware")(io, connectedUsers);
   io.on('connection',async socket => {
-    require("./privateChat")(io, socket);  
+    // require("./privateChat")(io, socket); // Disabled - using simple chat only  
     // require("./user")(io, socket);
-    require("./chat")(io, socket)
     require("./designations")(io, socket)
     require("./version")(io, socket)
     require("./auth")(io, socket, connectedUsers)
     
-    // New simple chat system
+    // Simple chat system only
     require("./simpleChat")(io, socket)
   });
 };

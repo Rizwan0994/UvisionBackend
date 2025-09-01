@@ -11,7 +11,7 @@ const {
 const onlineUsers = new Set();
 
 module.exports = (io, socket) => {
-    console.log('Simple chat socket initialized for user:', socket.handshake.query.loginUser?.id);
+
     
     const userId = socket.handshake.query.loginUser?.id;
     
@@ -19,14 +19,12 @@ module.exports = (io, socket) => {
     if (userId && !onlineUsers.has(userId)) {
         onlineUsers.add(userId);
         io.emit('simple-chat:online-users', { onlineUsers: Array.from(onlineUsers) });
-        console.log(`📢 User ${userId} came online. Total online: ${onlineUsers.size}`);
     }
 
     // Join user to their conversation rooms
     socket.on('simple-chat:join-conversations', async () => {
         try {
             const userId = socket.handshake.query.loginUser.id;
-            console.log(`🏠 User ${userId} requesting to join conversation rooms`);
             
             // Find all conversations for this user
             const conversations = await ConversationModel.scope('active').findAll({
@@ -39,13 +37,10 @@ module.exports = (io, socket) => {
                 attributes: ['id']
             });
 
-            console.log(`📋 Found ${conversations.length} conversations for user ${userId}`);
-
             // Join each conversation room
             conversations.forEach(conversation => {
                 const roomName = `conversation_${conversation.id}`;
                 socket.join(roomName);
-                console.log(`✅ User ${userId} joined room: ${roomName}`);
             });
 
             socket.emit('simple-chat:joined-conversations', {
@@ -56,11 +51,7 @@ module.exports = (io, socket) => {
             // Send current online users to the newly connected user
             socket.emit('simple-chat:online-users', { onlineUsers: Array.from(onlineUsers) });
 
-            console.log(`🎯 User ${userId} successfully joined ${conversations.length} conversation rooms`);
-            console.log(`👥 Current online users:`, Array.from(onlineUsers));
-
         } catch (error) {
-            console.error('❌ Error joining conversations:', error);
             socket.emit('simple-chat:error', {
                 event: 'join-conversations',
                 message: 'Failed to join conversations'
@@ -71,7 +62,13 @@ module.exports = (io, socket) => {
     // Send a message
     socket.on('simple-chat:send-message', async (data, callback) => {
         try {
-            const senderId = socket.handshake.query.loginUser.id;
+            // Get sender ID from socket authentication (token-based)
+            const senderId = socket.handshake.query.loginUser?.id;
+            
+            if (!senderId) {
+                throw new Error('User not authenticated');
+            }
+            
             const { 
                 conversationId, 
                 message, 
@@ -83,8 +80,6 @@ module.exports = (io, socket) => {
                 mimeType,
                 s3Key
             } = data;
-
-            console.log('Sending message:', { conversationId, senderId, messageType, hasFile: !!fileUrl });
 
             // Validate conversation exists and user is part of it
             const conversation = await ConversationModel.scope('active').findOne({
@@ -164,11 +159,6 @@ module.exports = (io, socket) => {
 
             // Broadcast to conversation room
             const roomName = `conversation_${conversationId}`;
-            console.log(`📢 Broadcasting message to room: ${roomName}`);
-            
-            // Get all clients in the room for debugging
-            const roomClients = io.sockets.adapter.rooms.get(roomName);
-            console.log(`👥 Clients in room ${roomName}:`, roomClients ? Array.from(roomClients) : 'None');
             
             io.to(roomName).emit('simple-chat:new-message', {
                 conversationId,
@@ -183,16 +173,9 @@ module.exports = (io, socket) => {
                 });
             }
 
-            console.log(`✅ Message sent in conversation ${conversationId} by user ${senderId}`, {
-                type: finalMessageType,
-                hasFile: !!fileUrl,
-                roomName,
-                clientsInRoom: roomClients ? roomClients.size : 0
-            });
+
 
         } catch (error) {
-            console.error('Error sending message:', error);
-            
             const errorResponse = {
                 success: false,
                 error: error.message || 'Failed to send message'
@@ -259,7 +242,6 @@ module.exports = (io, socket) => {
             });
 
         } catch (error) {
-            console.error('Error marking messages as read:', error);
             socket.emit('simple-chat:error', {
                 event: 'mark-read',
                 message: error.message || 'Failed to mark messages as read'
@@ -285,20 +267,18 @@ module.exports = (io, socket) => {
             });
 
         } catch (error) {
-            console.error('Error handling typing indicator:', error);
+            // Handle typing errors silently
         }
     });
 
     // Handle disconnect
     socket.on('disconnect', () => {
         const userId = socket.handshake.query.loginUser?.id;
-        console.log('Simple chat socket disconnected for user:', userId);
         
         // Remove user from online users and broadcast update
         if (userId && onlineUsers.has(userId)) {
             onlineUsers.delete(userId);
             io.emit('simple-chat:online-users', { onlineUsers: Array.from(onlineUsers) });
-            console.log(`📢 User ${userId} went offline. Total online: ${onlineUsers.size}`);
         }
     });
 };

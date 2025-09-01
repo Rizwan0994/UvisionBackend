@@ -44,7 +44,6 @@ const connectUserToOnline = async (loginUser, socket, io) => {
 module.exports = (io, connectedUsers) => {
     io.use(async (socket, next) => {
         try {
-          console.log('Socket connection attempt with query:', socket.handshake.query);     
           const decodedToken = await require("../helpers/common").decodeToken(socket.handshake.query.token)
           if (decodedToken) {
             const loginUser = await UserModel.scope(['roleData']).findByPk(decodedToken.id);
@@ -59,8 +58,6 @@ module.exports = (io, connectedUsers) => {
             next();
           }
         } catch (error) {
-          console.log('error :>> ', error);
-          console.log("handle session expiry");
           next(error);
         }
     });

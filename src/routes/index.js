@@ -55,10 +55,10 @@ router.use(jwtValidation);
 router.use(excelDownloadLog);
 router.use('/user', require("./user.routes"));
 router.use('/profile', require("./profile.routes"));
-router.use('/chat', require("./chat.routes"));
-router.use('/chat/user', require("./chatUser.routes"));
-router.use('/message', require("./message.routes"));
-router.use('/simple-chat', require("./simpleChat.routes"));
+// router.use('/chat', require("./chat.routes")); // Disabled - using simple chat only
+// router.use('/chat/user', require("./chatUser.routes")); // Disabled - using simple chat only
+// router.use('/message', require("./message.routes")); // Disabled - using simple chat only
+router.use('/chat', require("./simpleChat.routes"));
 router.use('/note', require("./note.routes"));
 router.use('/fcmtoken', require("./fcmToken.routes"));
 router.use('/log', require('./log.routes'));
