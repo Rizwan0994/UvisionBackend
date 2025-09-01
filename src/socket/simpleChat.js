@@ -18,7 +18,7 @@ module.exports = (io, socket) => {
     // Add user to online users and broadcast update
     if (userId && !onlineUsers.has(userId)) {
         onlineUsers.add(userId);
-        io.emit('simple-chat:online-users', Array.from(onlineUsers));
+        io.emit('simple-chat:online-users', { onlineUsers: Array.from(onlineUsers) });
         console.log(`📢 User ${userId} came online. Total online: ${onlineUsers.size}`);
     }
 
@@ -54,9 +54,10 @@ module.exports = (io, socket) => {
             });
 
             // Send current online users to the newly connected user
-            socket.emit('simple-chat:online-users', Array.from(onlineUsers));
+            socket.emit('simple-chat:online-users', { onlineUsers: Array.from(onlineUsers) });
 
             console.log(`🎯 User ${userId} successfully joined ${conversations.length} conversation rooms`);
+            console.log(`👥 Current online users:`, Array.from(onlineUsers));
 
         } catch (error) {
             console.error('❌ Error joining conversations:', error);
@@ -296,7 +297,7 @@ module.exports = (io, socket) => {
         // Remove user from online users and broadcast update
         if (userId && onlineUsers.has(userId)) {
             onlineUsers.delete(userId);
-            io.emit('simple-chat:online-users', Array.from(onlineUsers));
+            io.emit('simple-chat:online-users', { onlineUsers: Array.from(onlineUsers) });
             console.log(`📢 User ${userId} went offline. Total online: ${onlineUsers.size}`);
         }
     });
