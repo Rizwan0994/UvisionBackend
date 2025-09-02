@@ -1,0 +1,123 @@
+{
+	"info": {
+		"name": "uVision Upload API",
+		"description": "Basic upload API collection for uVision",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Get Presigned URL",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fileName\": \"test-image.jpg\",\n  \"fileType\": \"image/jpeg\",\n  \"category\": \"profile\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/upload/presigned-url",
+					"host": ["{{baseUrl}}"],
+					"path": ["upload", "presigned-url"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload File to S3",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "image/jpeg",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "file",
+					"file": {
+						"src": ""
+					}
+				},
+				"url": {
+					"raw": "{{presignedUrl}}",
+					"host": ["{{presignedUrl}}"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete File from S3",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/upload/delete?fileUrl=https://your-bucket.s3.amazonaws.com/uploads/profile/2025/01/23/test-image.jpg",
+					"host": ["{{baseUrl}}"],
+					"path": ["upload", "delete"],
+					"query": [
+						{
+							"key": "fileUrl",
+							"value": "https://your-bucket.s3.amazonaws.com/uploads/profile/2025/01/23/test-image.jpg"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get File Info",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/upload/file-info?fileUrl=https://your-bucket.s3.amazonaws.com/uploads/profile/2025/01/23/test-image.jpg",
+					"host": ["{{baseUrl}}"],
+					"path": ["upload", "file-info"],
+					"query": [
+						{
+							"key": "fileUrl",
+							"value": "https://your-bucket.s3.amazonaws.com/uploads/profile/2025/01/23/test-image.jpg"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

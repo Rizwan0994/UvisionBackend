@@ -7,68 +7,84 @@ const {
     Op
 } = require('../models/index');
 
-// In-memory store for online users in simple chat
-const onlineUsers = new Set();
-
 module.exports = (io, socket) => {
-
+    let currentRoom = null;
     
-    const userId = socket.handshake.query.loginUser?.id;
-    
-    // Add user to online users and broadcast update
-    if (userId && !onlineUsers.has(userId)) {
-        onlineUsers.add(userId);
-        io.emit('simple-chat:online-users', { onlineUsers: Array.from(onlineUsers) });
-    }
-
-    // Join user to their conversation rooms
-    socket.on('simple-chat:join-conversations', async () => {
+    // Join single conversation room
+    socket.on('join', async (conversationId) => {
         try {
-            const userId = socket.handshake.query.loginUser.id;
+            const userId = socket.handshake.query.loginUser?.id;
             
-            // Find all conversations for this user
-            const conversations = await ConversationModel.scope('active').findAll({
+            if (!userId) {
+                socket.emit('error', { message: 'User not authenticated' });
+                return;
+            }
+            
+            // Validate user has access to this conversation
+            const conversation = await ConversationModel.scope('active').findOne({
                 where: {
+                    id: conversationId,
                     [Op.or]: [
                         { clientId: userId },
                         { professionalId: userId }
                     ]
-                },
-                attributes: ['id']
+                }
             });
-
-            // Join each conversation room
-            conversations.forEach(conversation => {
-                const roomName = `conversation_${conversation.id}`;
-                socket.join(roomName);
-            });
-
-            socket.emit('simple-chat:joined-conversations', {
-                success: true,
-                conversationCount: conversations.length
-            });
-
-            // Send current online users to the newly connected user
-            socket.emit('simple-chat:online-users', { onlineUsers: Array.from(onlineUsers) });
-
-        } catch (error) {
-            socket.emit('simple-chat:error', {
-                event: 'join-conversations',
-                message: 'Failed to join conversations'
-            });
-        }
-    });
-
-    // Send a message
-    socket.on('simple-chat:send-message', async (data, callback) => {
-        try {
-            // Get sender ID from socket authentication (token-based)
-            const senderId = socket.handshake.query.loginUser?.id;
             
-            if (!senderId) {
-                throw new Error('User not authenticated');
+            if (!conversation) {
+                socket.emit('error', { message: 'Conversation not found or access denied' });
+                return;
             }
             
+            // Leave previous room if different
+            if (currentRoom && currentRoom !== conversationId) {
+                console.log('Leaving previous room:', currentRoom);
+                socket.leave(currentRoom);
+            }
+            
+            // Join new room (or stay in current if same)
+            if (currentRoom !== conversationId) {
+                currentRoom = conversationId;
+                socket.join(conversationId);
+                console.log('User joined room:', {
+                    userId: socket.handshake.query.loginUser.id,
+                    conversationId,
+                    currentRoom,
+                    socketRooms: Array.from(socket.rooms)
+                });
+            } else {
+                console.log('User already in room:', conversationId);
+            }
+            
+            socket.emit('joined', { conversationId });
+            
+        } catch (error) {
+            socket.emit('error', { message: error.message });
+        }
+    });
+    
+    // Leave conversation room
+    socket.on('leave', (conversationId) => {
+        try {
+            console.log('User leaving room:', {
+                userId: socket.handshake.query.loginUser?.id,
+                conversationId,
+                currentRoom
+            });
+            
+            if (currentRoom === conversationId) {
+                socket.leave(conversationId);
+                currentRoom = null;
+                console.log('User left room:', conversationId);
+            }
+        } catch (error) {
+            console.error('Error leaving room:', error);
+        }
+    });
+    
+    // Send message
+    socket.on('message', async (data, callback) => {
+        try {
             const { 
                 conversationId, 
                 message, 
@@ -80,7 +96,13 @@ module.exports = (io, socket) => {
                 mimeType,
                 s3Key
             } = data;
-
+            
+            const senderId = socket.handshake.query.loginUser?.id;
+            
+            if (!senderId) {
+                throw new Error('User not authenticated');
+            }
+            
             // Validate conversation exists and user is part of it
             const conversation = await ConversationModel.scope('active').findOne({
                 where: {
@@ -91,11 +113,11 @@ module.exports = (io, socket) => {
                     ]
                 }
             });
-
+            
             if (!conversation) {
                 throw new Error('Conversation not found or access denied');
             }
-
+            
             // Determine message type if file is being sent
             let finalMessageType = messageType;
             if (fileUrl && mimeType) {
@@ -109,7 +131,7 @@ module.exports = (io, socket) => {
                     finalMessageType = 'file';
                 }
             }
-
+            
             // Create the message
             const newMessage = await SimpleMessageModel.create({
                 conversationId,
@@ -123,7 +145,9 @@ module.exports = (io, socket) => {
                 mimeType,
                 s3Key
             });
-
+            
+            console.log('Message created in database:', newMessage.toJSON());
+            
             // Generate appropriate last message preview
             let lastMessagePreview = message || '';
             if (fileUrl) {
@@ -144,7 +168,7 @@ module.exports = (io, socket) => {
                     lastMessagePreview = `${lastMessagePreview}: ${message}`;
                 }
             }
-
+            
             // Update conversation's last message info
             await ConversationModel.update({
                 lastMessageAt: new Date(),
@@ -153,18 +177,29 @@ module.exports = (io, socket) => {
             }, {
                 where: { id: conversationId }
             });
-
+            
+            console.log('Conversation updated with last message');
+            
             // Get message with sender details
             const messageWithSender = await SimpleMessageModel.scope('withSender').findByPk(newMessage.id);
-
-            // Broadcast to conversation room
-            const roomName = `conversation_${conversationId}`;
             
-            io.to(roomName).emit('simple-chat:new-message', {
+            if (!messageWithSender) {
+                throw new Error('Failed to fetch message with sender details');
+            }
+            
+            console.log('Message with sender details:', messageWithSender.toJSON());
+            
+            // Send to room (no prefix needed)
+            const roomMembers = io.sockets.adapter.rooms.get(conversationId);
+            console.log('Room members for conversation', conversationId, ':', roomMembers ? roomMembers.size : 0);
+            
+            io.to(conversationId).emit('message', {
                 conversationId,
                 message: messageWithSender.toJSON()
             });
-
+            
+            console.log('Message emitted to room:', conversationId);
+            
             // Send success response to sender
             if (callback) {
                 callback({
@@ -172,32 +207,29 @@ module.exports = (io, socket) => {
                     message: messageWithSender.toJSON()
                 });
             }
-
-
-
+            
         } catch (error) {
             const errorResponse = {
                 success: false,
                 error: error.message || 'Failed to send message'
             };
-
+            
             if (callback) {
                 callback(errorResponse);
             } else {
-                socket.emit('simple-chat:error', {
-                    event: 'send-message',
-                    ...errorResponse
+                socket.emit('error', {
+                    message: error.message || 'Failed to send message'
                 });
             }
         }
     });
-
+    
     // Mark messages as read
-    socket.on('simple-chat:mark-read', async (data) => {
+    socket.on('read', async (data) => {
         try {
             const userId = socket.handshake.query.loginUser.id;
-            const { conversationId, messageIds } = data;
-
+            const { conversationId, messageIds = [] } = data;
+            
             // Validate conversation access
             const conversation = await ConversationModel.scope('active').findOne({
                 where: {
@@ -208,77 +240,48 @@ module.exports = (io, socket) => {
                     ]
                 }
             });
-
+            
             if (!conversation) {
                 throw new Error('Conversation not found or access denied');
             }
-
-            // Mark messages as read (only messages not sent by this user)
-            const updatedMessages = await SimpleMessageModel.update({
+            
+            // If no specific message IDs provided, mark all unread messages in conversation
+            let whereClause = {
+                conversationId,
+                senderId: { [Op.ne]: userId }, // Don't mark own messages
+                isRead: false
+            };
+            
+            if (messageIds.length > 0) {
+                whereClause.id = { [Op.in]: messageIds };
+            }
+            
+            const [updatedCount] = await SimpleMessageModel.update({
                 isRead: true,
                 readAt: new Date()
             }, {
-                where: {
-                    id: { [Op.in]: messageIds },
-                    conversationId,
-                    senderId: { [Op.ne]: userId }, // Don't mark own messages as read
-                    isRead: false
-                },
-                returning: true
+                where: whereClause
             });
-
+            
             // Notify the conversation room about read status
-            const roomName = `conversation_${conversationId}`;
-            io.to(roomName).emit('simple-chat:messages-read', {
+            io.to(conversationId).emit('read', {
                 conversationId,
                 messageIds,
                 readBy: userId,
                 readAt: new Date()
             });
-
-            socket.emit('simple-chat:mark-read-success', {
-                conversationId,
-                markedCount: updatedMessages[0] || 0
-            });
-
+            
         } catch (error) {
-            socket.emit('simple-chat:error', {
-                event: 'mark-read',
+            socket.emit('error', {
                 message: error.message || 'Failed to mark messages as read'
             });
         }
     });
-
-    // Handle typing indicators
-    socket.on('simple-chat:typing', (data) => {
-        try {
-            const { conversationId, isTyping } = data;
-            const userId = socket.handshake.query.loginUser.id;
-            const userName = socket.handshake.query.loginUser.fullName;
-
-            const roomName = `conversation_${conversationId}`;
-            
-            // Broadcast typing status to others in the conversation
-            socket.to(roomName).emit('simple-chat:user-typing', {
-                conversationId,
-                userId,
-                userName,
-                isTyping
-            });
-
-        } catch (error) {
-            // Handle typing errors silently
-        }
-    });
-
-    // Handle disconnect
+    
+    // Cleanup on disconnect
     socket.on('disconnect', () => {
-        const userId = socket.handshake.query.loginUser?.id;
-        
-        // Remove user from online users and broadcast update
-        if (userId && onlineUsers.has(userId)) {
-            onlineUsers.delete(userId);
-            io.emit('simple-chat:online-users', { onlineUsers: Array.from(onlineUsers) });
+        if (currentRoom) {
+            socket.leave(currentRoom);
         }
     });
 };

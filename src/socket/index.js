@@ -13,7 +13,7 @@ module.exports = io => {
     require("./version")(io, socket)
     require("./auth")(io, socket, connectedUsers)
     
-    // Simple chat system only
-    require("./simpleChat")(io, socket)
+    // Ultra-simple chat system
+    require("./chat")(io, socket)
   });
 };
