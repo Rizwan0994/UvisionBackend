@@ -204,6 +204,7 @@ const getProfile = async (professionalId) => {
                     model: ProfessionalReviewsModel,
                     as: 'reviews',
                     attributes: ['id', 'rating', 'comment', 'createdAt'],
+                    required: false
                 },
 
                 //add booing whoes not completed or cancelled
@@ -212,6 +213,7 @@ const getProfile = async (professionalId) => {
                     as: 'bookings',
                     attributes: ['id','bookingDate','eventDate'],
                     where: { isDeleted: false, completionDate: null},
+                    required: false
                 }
             ]
         });
