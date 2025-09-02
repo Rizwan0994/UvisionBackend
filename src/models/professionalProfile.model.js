@@ -28,7 +28,7 @@ module.exports = (sequelize) => {
         },
         title: {
             type: DataTypes.STRING,
-            allowNull: false,
+         
             comment: 'Professional title (e.g., Photographer, Designer)'
         },
         specialization: {  //photographer, videographer, etc.
