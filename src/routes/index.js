@@ -70,6 +70,7 @@ router.use('/companyRole', require("./companyRole.routes"));
 router.use('/designationGroup', require("./designationGroup.routes"));
 router.use('/professional-dashboard', require("./professional.routes"));
 router.use('/booking', require("./booking.routes"));
+router.use('/mobile-booking', require("./mobileBookingRoutes"));
 router.use('/reviews', require("./review.routes"));
 router.use('/analytics', require("./analytics.routes"));
 module.exports = router;

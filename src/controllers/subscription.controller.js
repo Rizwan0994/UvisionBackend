@@ -95,6 +95,11 @@ const handleStripeWebhook = async (req, res) => {
                 console.log(`Unhandled event type: ${event.type}`);
         }
 
+        // Handle mobile booking webhook
+        if (event.type === 'checkout.session.completed' && event.data.object.metadata?.paymentType === 'upfront') {
+            await handleMobileBookingPayment(event.data.object);
+        }
+
         return {
             message: 'Webhook processed successfully'
         };
@@ -557,6 +562,25 @@ const createManualSubscription = async (req, res) => {
     } catch (error) {
         console.error('Error creating manual subscription:', error);
         throw error;
+    }
+};
+
+/**
+ * Handle Mobile Booking Payment Webhook
+ */
+const handleMobileBookingPayment = async (session) => {
+    try {
+        console.log('Processing mobile booking payment webhook:', session.id);
+        
+        const { professionalId, serviceId, paymentType, amount } = session.metadata;
+        
+        if (paymentType === 'upfront' && session.payment_status === 'paid') {
+            console.log(`Mobile booking payment completed: ${session.id} for professional ${professionalId}`);
+            // Additional mobile booking logic can be added here if needed
+        }
+        
+    } catch (error) {
+        console.error('Error handling mobile booking payment webhook:', error);
     }
 };
 
