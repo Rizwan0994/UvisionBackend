@@ -291,7 +291,10 @@ const searchProfessionals = async (data) => {
                 model: UserModel,
                 as: 'user',
                 attributes: ['id', 'fullName', 'userName', 'profilePicture'],
-                required: false // Will be set to true if name search is used
+                where: {
+                    role: 3
+                },
+                required: true // Will be set to true if name search is used
             },
             {
                 model: CategoryModel,
