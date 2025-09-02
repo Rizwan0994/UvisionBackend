@@ -38,7 +38,7 @@ exports.createBooking = async (data, loginUser) => {
         });
 
         if (!client || client.roleData?.name !== 'client') {
-            throw new createError["Forbidden"]("Only clients can create bookings");
+            return { status: 0, message: "Only clients can create bookings" };
         }
 
         // Check if professional exists

@@ -6,6 +6,7 @@ const {
     professionalPortfolio: ProfessionalPortfolioModel,
     professionalServices: ProfessionalServicesModel,
     professionalReviews: ProfessionalReviewsModel,
+    professionalBookings: ProfessionalBookingsModel,
     Op
 } = require('../models');
 const ProfessionalMetricsService = require('../services/professionalMetrics.service');
@@ -203,6 +204,14 @@ const getProfile = async (professionalId) => {
                     model: ProfessionalReviewsModel,
                     as: 'reviews',
                     attributes: ['id', 'rating', 'comment', 'createdAt'],
+                },
+
+                //add booing whoes not completed or cancelled
+                {
+                    model: ProfessionalBookingsModel,
+                    as: 'bookings',
+                    attributes: ['id','bookingDate','eventDate'],
+                    where: { isDeleted: false, completionDate: null},
                 }
             ]
         });
