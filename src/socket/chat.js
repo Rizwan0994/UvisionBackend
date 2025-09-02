@@ -10,6 +10,18 @@ const {
 module.exports = (io, socket) => {
     let currentRoom = null;
     
+    // Track online users
+    const onlineUsers = new Set();
+    
+    // User connected
+    socket.on('user-online', () => {
+        const userId = socket.handshake.query.loginUser?.id;
+        if (userId) {
+            onlineUsers.add(userId);
+            io.emit('user-online', { userId });
+        }
+    });
+    
     // Join single conversation room
     socket.on('join', async (conversationId) => {
         try {
@@ -280,8 +292,19 @@ module.exports = (io, socket) => {
     
     // Cleanup on disconnect
     socket.on('disconnect', () => {
+        const userId = socket.handshake.query.loginUser?.id;
+        if (userId) {
+            onlineUsers.delete(userId);
+            io.emit('user-offline', { userId });
+        }
+        
         if (currentRoom) {
             socket.leave(currentRoom);
         }
+    });
+    
+    // Send online users list on connection
+    socket.on('get-online-users', () => {
+        socket.emit('online-users', Array.from(onlineUsers));
     });
 };
