@@ -73,4 +73,5 @@ router.use('/booking', require("./booking.routes"));
 router.use('/mobile-booking', require("./mobileBookingRoutes"));
 router.use('/reviews', require("./review.routes"));
 router.use('/analytics', require("./analytics.routes"));
+router.use('/teams', require("./teamRoutes"));
 module.exports = router;

@@ -22,6 +22,10 @@ exports.userModel = (db) => {
     db.user.hasMany(db.conversation, { foreignKey: 'professionalId', as: 'professionalConversations'});
     db.user.hasMany(db.simpleMessage, { foreignKey: 'senderId', as: 'sentMessages'});
 
+    // Team Management associations
+    db.user.hasMany(db.team, { foreignKey: 'ownerId', as: 'ownedTeams'});
+    db.user.hasMany(db.teamMember, { foreignKey: 'userId', as: 'teamMemberships'});
+
     // OTP associations
     db.user.hasMany(db.otp, { foreignKey: 'userId', as: 'otps'});
 
@@ -797,6 +801,64 @@ exports.simpleMessageModel = (db) => {
 exports.otpModel = (db) => {
     // OTP belongs to user
     db.otp.belongsTo(db.user, {
+        foreignKey: 'userId',
+        as: 'user'
+    });
+};
+
+// Team Management model associations
+exports.teamModel = (db) => {
+    // Team belongs to owner (user)
+    db.team.belongsTo(db.user, {
+        foreignKey: 'ownerId',
+        as: 'owner'
+    });
+    
+    // Team has many members
+    db.team.hasMany(db.teamMember, {
+        foreignKey: 'teamId',
+        as: 'members'
+    });
+    
+    // Add scopes for team queries
+    db.team.addScope('withMembers', {
+        include: [
+            {
+                model: db.teamMember,
+                as: 'members',
+                where: { isActive: true },
+                include: [
+                    {
+                        model: db.user,
+                        as: 'user',
+                        attributes: ['id', 'fullName', 'userName', 'profilePicture']
+                    }
+                ]
+            }
+        ]
+    });
+    
+    db.team.addScope('withOwner', {
+        include: [
+            {
+                model: db.user,
+                as: 'owner',
+                attributes: ['id', 'fullName', 'userName', 'profilePicture']
+            }
+        ]
+    });
+};
+
+// Team Member model associations
+exports.teamMemberModel = (db) => {
+    // Team member belongs to team
+    db.teamMember.belongsTo(db.team, {
+        foreignKey: 'teamId',
+        as: 'team'
+    });
+    
+    // Team member belongs to user
+    db.teamMember.belongsTo(db.user, {
         foreignKey: 'userId',
         as: 'user'
     });

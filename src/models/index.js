@@ -95,6 +95,10 @@ db.conversation = require('./conversation.model')(sequelize);
 db.simpleMessage = require('./simpleMessage.model')(sequelize);
 db.otp = require('./otp.model')(sequelize);
 
+// Team Management models
+db.team = require('./team.js')(sequelize);
+db.teamMember = require('./teamMember.js')(sequelize);
+
 require("./associate")(db);
 
 module.exports = db;
