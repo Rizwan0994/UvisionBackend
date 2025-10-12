@@ -99,6 +99,10 @@ db.otp = require('./otp.model')(sequelize);
 db.team = require('./team.js')(sequelize);
 db.teamMember = require('./teamMember.js')(sequelize);
 
+// Team Event models
+db.teamEvent = require('./teamEvent.js')(sequelize);
+db.eventTask = require('./eventTask.js')(sequelize);
+
 require("./associate")(db);
 
 module.exports = db;

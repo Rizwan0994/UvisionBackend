@@ -863,3 +863,94 @@ exports.teamMemberModel = (db) => {
         as: 'user'
     });
 };
+
+// Team Event model associations
+exports.teamEventModel = (db) => {
+    // Team event belongs to team
+    db.teamEvent.belongsTo(db.team, {
+        foreignKey: 'teamId',
+        as: 'team'
+    });
+    
+    // Team event belongs to creator (user)
+    db.teamEvent.belongsTo(db.user, {
+        foreignKey: 'createdBy',
+        as: 'creator'
+    });
+    
+    // Team event belongs to client (user) - optional
+    db.teamEvent.belongsTo(db.user, {
+        foreignKey: 'clientId',
+        as: 'client'
+    });
+    
+    // Team event has many tasks
+    db.teamEvent.hasMany(db.eventTask, {
+        foreignKey: 'eventId',
+        as: 'tasks'
+    });
+    
+    // Add scopes for team event queries
+    db.teamEvent.addScope('withTeam', {
+        include: [
+            {
+                model: db.team,
+                as: 'team',
+                attributes: ['id', 'name']
+            }
+        ]
+    });
+    
+    db.teamEvent.addScope('withCreator', {
+        include: [
+            {
+                model: db.user,
+                as: 'creator',
+                attributes: ['id', 'fullName', 'userName', 'profilePicture']
+            }
+        ]
+    });
+    
+    db.teamEvent.addScope('withClient', {
+        include: [
+            {
+                model: db.user,
+                as: 'client',
+                attributes: ['id', 'fullName', 'userName', 'profilePicture'],
+                required: false
+            }
+        ]
+    });
+    
+    db.teamEvent.addScope('withTasks', {
+        include: [
+            {
+                model: db.eventTask,
+                as: 'tasks',
+                where: { isActive: true },
+                include: [
+                    {
+                        model: db.user,
+                        as: 'assignedUser',
+                        attributes: ['id', 'fullName', 'userName', 'profilePicture']
+                    }
+                ]
+            }
+        ]
+    });
+};
+
+// Event Task model associations
+exports.eventTaskModel = (db) => {
+    // Event task belongs to team event
+    db.eventTask.belongsTo(db.teamEvent, {
+        foreignKey: 'eventId',
+        as: 'event'
+    });
+    
+    // Event task belongs to assigned user
+    db.eventTask.belongsTo(db.user, {
+        foreignKey: 'assignedTo',
+        as: 'assignedUser'
+    });
+};
